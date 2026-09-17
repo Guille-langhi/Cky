@@ -1,0 +1,84 @@
+import { AccessoryItem } from "../types";
+
+export const ACCESSORIES_DATABASE: AccessoryItem[] = [
+  {
+    id: "perfume_frances",
+    nameEs: "Perfume Francés 'Nuit Éthérée'",
+    nameEn: "French Perfume 'Nuit Éthérée'",
+    descEs: "Frasco de cristal de lujo francés comprado en la boutique. Envuelve a CKY en una fragancia embriagadora que desconcierta a los enemigos del Limbo.",
+    descEn: "Luxury French crystal bottle bought at the boutique. Envelops CKY in an intoxicating fragrance that confuses Limbo enemies.",
+    icon: "🌸",
+    bonusEs: "+15% Evasión y +10% Regeneración de Maná/Perfume",
+    bonusEn: "+15% Evasion & +10% Mana/Perfume Regen",
+    statBonus: {
+      evasion: 15,
+      manaBoost: 10,
+    },
+  },
+  {
+    id: "colgante_astral",
+    nameEs: "Colgante Ancestral de W",
+    nameEn: "W's Ancestral Pendant",
+    descEs: "Reliquia bendecida por el espíritu guardián W. Canaliza ondas curativas que potencian cualquier alimento consumido.",
+    descEn: "Relic blessed by guardian spirit W. Channels soothing healing waves that amplify any consumed food.",
+    icon: "✨",
+    bonusEs: "+25% Curación extra al tomar Sándwich o Agua",
+    bonusEn: "+25% Extra healing from Sandwiches or Water",
+    statBonus: {
+      healBoost: 25,
+    },
+  },
+  {
+    id: "reloj_escolar",
+    nameEs: "Reloj Vintage de CKY",
+    nameEn: "CKY's Vintage School Watch",
+    descEs: "El fiel reloj de pulsera de CKY. Sincroniza los reflejos permitiendo anticiparse y actuar antes en cada turno.",
+    descEn: "CKY's trusty wristwatch. Synchronizes reflexes to act faster and attack first in battle.",
+    icon: "⌚",
+    bonusEs: "+15 Velocidad de Turno e Iniciativa de Combate",
+    bonusEn: "+15 Turn Speed & Combat Initiative",
+    statBonus: {
+      speed: 15,
+    },
+  },
+  {
+    id: "billete_suerte",
+    nameEs: "Billete de $500 de la Suerte",
+    nameEn: "$500 Lucky Banknote",
+    descEs: "El billete rescatado de la plantita de Mamá. Llevarlo en el bolsillo otorga una suerte legendaria en los momentos decisivos.",
+    descEn: "The banknote rescued from Mom's plant. Carrying it brings legendary luck during clutch moments.",
+    icon: "💵",
+    bonusEs: "+20% Probabilidad de Golpe Crítico",
+    bonusEn: "+20% Critical Hit Rate",
+    statBonus: {
+      critRate: 20,
+    },
+  },
+  {
+    id: "zapatillas_running",
+    nameEs: "Zapatillas Deportivas Pro",
+    nameEn: "Pro Running Sneakers",
+    descEs: "Zapatillas aerodinámicas compradas para correr la carrera al Aeropuerto contra la Vecina. Ligeras y resistentes.",
+    descEn: "Aerodynamic sneakers used in the Airport race against the Neighbor. Feather-light and resilient.",
+    icon: "👟",
+    bonusEs: "+30% Velocidad de Movimiento y Huida Táctica",
+    bonusEn: "+30% Movement Speed & Tactical Escape",
+    statBonus: {
+      speed: 20,
+      evasion: 10,
+    },
+  },
+  {
+    id: "diario_intimo",
+    nameEs: "Diario Íntimo con Candado",
+    nameEn: "Secret Diary with Padlock",
+    descEs: "El diario donde CKY guarda sus pensamientos, bromas de Ángela y secretos de su alma gemela. Otorga fortaleza mental inquebrantable.",
+    descEn: "The diary where CKY keeps her thoughts, Angela's jokes and soulmate secrets. Grants unbreakable mental fortitude.",
+    icon: "📖",
+    bonusEs: "+15% Daño Mágico y Resistencia a Discordia",
+    bonusEn: "+15% Magic Damage & Discord Resistance",
+    statBonus: {
+      damageBoost: 15,
+    },
+  },
+];
