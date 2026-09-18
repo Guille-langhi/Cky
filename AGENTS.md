@@ -258,11 +258,10 @@ Este archivo documenta las reglas de juego, estado de desarrollo, tareas del Dí
    - En navegadores de escritorio (PC), se ejecuta encapsulado dentro de un **Simulador de Dispositivo Android (`AndroidDeviceFrame`)** con chasis de smartphone, barra de estado de Android (reloj en tiempo real, 5G, Wi-Fi, batería 100%), cámara punch-hole y barra de gestos, alertando que está optimizado para celulares e incluyendo código QR para abrir e instalar en el teléfono con la cámara.
    - En pantallas móviles reales o modo fullscreen se adapta automáticamente al 100% de la pantalla táctil con el Gamepad virtual activo.
 
-2. **PWA Instalable (Progressive Web App)**:
-   - Plugin `vite-plugin-pwa` configurado en `vite.config.ts` con Service Worker (`sw.js`) y precaching de assets para funcionamiento offline.
-   - Manifiesto Web (`manifest.webmanifest`) con `display: "standalone"`, `orientation: "any"`, colores temáticos (`#1e1b4b` / `#0f172a`), y paquete de iconos en `public/` (192x192, 512x512, maskable y apple-touch-icon).
-   - Hook de detección e instalación reactiva `usePWAInstall.ts`.
-   - Botón interactivo **"ANDROID"** en la barra superior (`Header.tsx`) y código QR en el modal para abrir al instante en Android.
+2. **Exclusividad APK Nativo (Sin PWA)**:
+   - Se eliminó completamente la configuración de PWA (sin service worker ni webmanifest).
+   - El juego compila y se distribuye 100% como archivo instalable `.apk` nativo mediante Capacitor y Gradle (`.github/workflows/build-apk.yml`).
+   - El modal de Android en la interfaz (`AndroidExportModal.tsx`) guía la descarga directa del archivo binario APK y la compilación local con Android Studio.
 
 3. **Capacitor para APK Nativo**:
    - Archivo de configuración `capacitor.config.json` inicializado con App ID `com.cky.rpgcreator` y nombre `CKY - 8-Bit RPG Creator`.
@@ -277,7 +276,7 @@ Este archivo documenta las reglas de juego, estado de desarrollo, tareas del Dí
    - **Screen Wake Lock Activo**: Mantiene la pantalla encendida automáticamente mientras se juega o se leen diálogos para evitar que el teléfono se bloquee solo.
    - **Almacenamiento Persistente (`navigator.storage.persist`)**: Protege las partidas guardadas para que Android no las limpie por falta de espacio temporal.
    - **Ahorro de Batería en Segundo Plano**: Pausa automáticamente el bucle de renderizado y suspende el motor de audio WebAudio cuando la app se minimiza o la pantalla se apaga.
-   - **Motor Háptico 2.0 (`androidMobileBridge.ts`)**: Vibración adaptativa diferenciada para pasos, botones A/B, recolección de objetos, avance de diálogo, subidas de nivel, impactos de combate y la supernova final.
+   - **Motor Háptico 2.0 (`androidMobileBridge.ts`)**: Desactivado por defecto. El usuario puede activarlo o desactivarlo a voluntad desde el menú de opciones (Ajustes de Sonido/Audio, pestaña de configuración del Diario o app de Música del Celular). Vibración adaptativa diferenciada para pasos, botones A/B, recolección de objetos, avance de diálogo, subidas de nivel, impactos de combate y la supernova final.
    - **Tap-To-Move Táctil y Turbo Sprint**: Desplazamiento inteligente por toque en el mapa con pathfinding BFS y modo correr/turbo activable mediante botón o doble toque rápido.
    - **Avance Táctil de Diálogos e Intros**: Salto y avance fluido tocando cualquier sector de la pantalla sin depender de teclado.
 

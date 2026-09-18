@@ -10,6 +10,7 @@ interface HeaderProps {
   onOpenSaveLoadModal?: (mode: "save" | "load") => void;
   onOpenGraphicsSettings?: () => void;
   onOpenAndroidModal?: () => void;
+  onOpenAudioModal?: () => void;
 }
 
 export default function Header({
@@ -20,6 +21,7 @@ export default function Header({
   onOpenSaveLoadModal,
   onOpenGraphicsSettings,
   onOpenAndroidModal,
+  onOpenAudioModal,
 }: HeaderProps) {
   return (
     <header className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-b border-slate-800 bg-slate-950/95 backdrop-blur-md sticky top-0 z-40">
@@ -70,10 +72,10 @@ export default function Header({
           <button
             onClick={onOpenAndroidModal}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold text-emerald-400 hover:text-emerald-300 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all shadow-sm active:scale-95 cursor-pointer"
-            title={language === "es" ? "Instalar en Android / Exportar APK" : "Install on Android / Export APK"}
+            title={language === "es" ? "Descargar APK Nativo de Android" : "Download Native Android APK"}
           >
             <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden sm:inline">{language === "es" ? "ANDROID" : "ANDROID"}</span>
+            <span className="hidden sm:inline">{language === "es" ? "APK ANDROID" : "ANDROID APK"}</span>
           </button>
         )}
 
@@ -101,6 +103,17 @@ export default function Header({
         >
           {isSilent ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
         </button>
+
+        {/* Audio Controls Modal Trigger */}
+        {onOpenAudioModal && (
+          <button
+            onClick={onOpenAudioModal}
+            className="p-2 rounded-lg border border-slate-800 bg-slate-900 text-cyan-400 hover:text-cyan-300 hover:border-cyan-500/40 transition-colors"
+            title={language === "es" ? "Ajustes de Sonido y BGM" : "Sound & BGM Settings"}
+          >
+            <Sparkles className="w-4 h-4" />
+          </button>
+        )}
 
         {/* Language Switcher */}
         <button

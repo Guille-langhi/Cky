@@ -22,6 +22,7 @@ import JournalAndInventory from "./components/JournalAndInventory";
 import SaveLoadModal from "./components/SaveLoadModal";
 import DevDaySelectModal from "./components/DevDaySelectModal";
 import GraphicsSettingsModal from "./components/GraphicsSettingsModal";
+import AudioControlsModal from "./components/AudioControlsModal";
 import { AndroidExportModal } from "./components/AndroidExportModal";
 import { SaveSlotData, saveToSlot, getLatestSave } from "./lib/saveSystem";
 import { GraphicsConfig, loadGraphicsConfig, saveGraphicsConfig } from "./lib/graphicsEngine";
@@ -56,6 +57,9 @@ export default function App() {
   const [graphicsConfig, setGraphicsConfig] = useState<GraphicsConfig>(loadGraphicsConfig);
   const [showGraphicsModal, setShowGraphicsModal] = useState<boolean>(false);
 
+  // Audio Controls Modal state
+  const [showAudioModal, setShowAudioModal] = useState<boolean>(false);
+
   // Android Export / PWA Modal state
   const [showAndroidModal, setShowAndroidModal] = useState<boolean>(false);
 
@@ -79,7 +83,18 @@ export default function App() {
   });
 
   // Android Systems: Screen Wake Lock, Storage Persistence & Background Battery Optimizer
+  const [isStandaloneApp, setIsStandaloneApp] = useState<boolean>(false);
+
   useEffect(() => {
+    // Detect if running inside native Android App (Capacitor/WebView)
+    const isStandalone = 
+      document.referrer.includes("android-app://") ||
+      window.location.href.includes("mode=app") ||
+      (window as any).Capacitor !== undefined ||
+      /Android/i.test(navigator.userAgent);
+    
+    setIsStandaloneApp(isStandalone);
+
     // 1. Keep screen active while playing
     const cleanupWakeLock = androidBridge.initAutoWakeLock();
 
@@ -2280,25 +2295,28 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-yellow-500 selection:text-slate-950">
       
-      {/* Central custom header switcher */}
-      <Header
-        language={language}
-        onLanguageChange={setLanguage}
-        isSilent={isSilent}
-        onToggleSound={() => {
-          setIsSilent(!isSilent);
-          // Play note feedback if turning sound on
-          if (isSilent) {
-            setTimeout(() => playSound(520, "sine", 0.2), 50);
-          }
-        }}
-        onOpenSaveLoadModal={(mode) => setSaveLoadModalState({ isOpen: true, mode })}
-        onOpenGraphicsSettings={() => setShowGraphicsModal(true)}
-        onOpenAndroidModal={() => setShowAndroidModal(true)}
-      />
+      {/* Central custom header switcher (hidden in native standalone Android app) */}
+      {!isStandaloneApp && (
+        <Header
+          language={language}
+          onLanguageChange={setLanguage}
+          isSilent={isSilent}
+          onToggleSound={() => {
+            setIsSilent(!isSilent);
+            // Play note feedback if turning sound on
+            if (isSilent) {
+              setTimeout(() => playSound(520, "sine", 0.2), 50);
+            }
+          }}
+          onOpenSaveLoadModal={(mode) => setSaveLoadModalState({ isOpen: true, mode })}
+          onOpenGraphicsSettings={() => setShowGraphicsModal(true)}
+          onOpenAndroidModal={() => setShowAndroidModal(true)}
+          onOpenAudioModal={() => setShowAudioModal(true)}
+        />
+      )}
 
       {/* Main Android Game Screen Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-2 sm:p-4 flex flex-col gap-4">
+      <main className={`flex-1 w-full mx-auto flex flex-col gap-4 ${isStandaloneApp ? "p-0 max-w-full" : "max-w-7xl p-2 sm:p-4"}`}>
         <AndroidDeviceFrame language={language} onOpenInstallModal={() => setShowAndroidModal(true)}>
           <div className="flex flex-col items-center w-full relative">
             
@@ -2473,6 +2491,7 @@ export default function App() {
                         onOpenPhone={() => setGameState("phone")}
                         onOpenSaveLoadModal={(mode) => setSaveLoadModalState({ isOpen: true, mode })}
                         onOpenDevModal={() => setShowDevModal(true)}
+                        onOpenAudioModal={() => setShowAudioModal(true)}
                         currentDay={currentDay}
                       />
                     </div>
@@ -2667,6 +2686,14 @@ export default function App() {
               language={language}
             />
 
+            {/* OVERLAY MODAL: Audio & BGM Controls */}
+            {showAudioModal && (
+              <AudioControlsModal
+                language={language}
+                onClose={() => setShowAudioModal(false)}
+              />
+            )}
+
           </div>
         </AndroidDeviceFrame>
 
@@ -2717,15 +2744,17 @@ export default function App() {
         </div>
       )}
 
-      {/* Retro aesthetic margin lines info footer */}
-      <footer className="mt-auto border-t border-slate-800 bg-slate-950 py-4 text-center font-mono text-[9px] text-slate-500 uppercase tracking-widest px-4 flex flex-col items-center gap-1">
-        <p className="text-emerald-500/80 font-bold">
-          {language === "es" ? "🤖 CKY RPG • EXCLUSIVO PARA ANDROID (APK & PWA)" : "🤖 CKY RPG • EXCLUSIVE FOR ANDROID (APK & PWA)"}
-        </p>
-        <p className="text-slate-600">
-          {language === "es" ? "Capítulo 1 Completo • Optimizado para Pantallas Táctiles y Controles Móviles" : "Chapter 1 Complete • Optimized for Touchscreens and Mobile Gamepads"}
-        </p>
-      </footer>
+      {/* Retro aesthetic margin lines info footer (hidden in native standalone Android app) */}
+      {!isStandaloneApp && (
+        <footer className="mt-auto border-t border-slate-800 bg-slate-950 py-4 text-center font-mono text-[9px] text-slate-500 uppercase tracking-widest px-4 flex flex-col items-center gap-1">
+          <p className="text-emerald-500/80 font-bold">
+            {language === "es" ? "🤖 CKY RPG • EXCLUSIVO PARA ANDROID (APK NATIVO)" : "🤖 CKY RPG • EXCLUSIVE FOR ANDROID (NATIVE APK)"}
+          </p>
+          <p className="text-slate-600">
+            {language === "es" ? "Capítulo 1 Completo • Optimizado para Pantallas Táctiles y Controles Móviles" : "Chapter 1 Complete • Optimized for Touchscreens and Mobile Gamepads"}
+          </p>
+        </footer>
+      )}
 
     </div>
   );

@@ -13,10 +13,23 @@ export const AndroidDeviceFrame: React.FC<AndroidDeviceFrameProps> = ({
   onOpenInstallModal,
 }) => {
   const [time, setTime] = useState<string>("12:00");
-  const [isMobileScreen, setIsMobileScreen] = useState<boolean>(false);
+  const [isMobileScreen, setIsMobileScreen] = useState<boolean>(true);
   const [forceFullscreenMode, setForceFullscreenMode] = useState<boolean>(false);
+  const [isStandaloneOrAndroid, setIsStandaloneOrAndroid] = useState<boolean>(false);
 
   useEffect(() => {
+    // Detect if running inside native Android App (Capacitor/WebView)
+    const checkNativeOrStandalone = () => {
+      const isStandalone = 
+        document.referrer.includes("android-app://") ||
+        window.location.href.includes("mode=app") ||
+        (window as any).Capacitor !== undefined ||
+        /Android/i.test(navigator.userAgent);
+      
+      setIsStandaloneOrAndroid(isStandalone);
+    };
+    checkNativeOrStandalone();
+
     // Update digital clock in Android status bar
     const updateTime = () => {
       const now = new Date();
@@ -29,7 +42,7 @@ export const AndroidDeviceFrame: React.FC<AndroidDeviceFrameProps> = ({
 
     // Detect screen width
     const checkScreen = () => {
-      setIsMobileScreen(window.innerWidth < 1024);
+      setIsMobileScreen(window.innerWidth < 1024 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
     };
     checkScreen();
     window.addEventListener("resize", checkScreen);
@@ -39,6 +52,11 @@ export const AndroidDeviceFrame: React.FC<AndroidDeviceFrameProps> = ({
       window.removeEventListener("resize", checkScreen);
     };
   }, []);
+
+  // When running inside Android APK native container, render completely borderless fullscreen without banners
+  if (isStandaloneOrAndroid) {
+    return <div className="w-full flex flex-col items-center">{children}</div>;
+  }
 
   // If already on a real phone or tablet screen, or fullscreen toggle active, render standard clean mobile container
   if (isMobileScreen || forceFullscreenMode) {
@@ -113,7 +131,7 @@ export const AndroidDeviceFrame: React.FC<AndroidDeviceFrameProps> = ({
             className="px-3.5 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold font-mono rounded-xl flex items-center gap-1.5 text-xs transition shadow-md active:scale-95 cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>{language === "es" ? "INSTALAR EN CELULAR" : "INSTALL ON PHONE"}</span>
+            <span>{language === "es" ? "APK DE ANDROID" : "ANDROID APK"}</span>
           </button>
         </div>
       </div>

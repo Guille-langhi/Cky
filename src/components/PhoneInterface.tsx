@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import PhotoViewerModal from "./PhotoViewerModal";
 import { soundEngine } from "../lib/soundEngine";
+import { androidBridge } from "../lib/androidMobileBridge";
 
 interface PhoneInterfaceProps {
   language: Language;
@@ -88,6 +89,9 @@ export default function PhoneInterface({
   const [currentBgmTrack, setCurrentBgmTrack] = useState<string>("house");
   const [isMusicPlaying, setIsMusicPlaying] = useState<boolean>(false);
   const [musicVolume, setMusicVolume] = useState<number>(0.35);
+
+  // Haptics state in phone
+  const [phoneHapticsOn, setPhoneHapticsOn] = useState<boolean>(() => androidBridge.isHapticsEnabled());
 
   // InstaCKY Social Feed State
   const [instaPosts, setInstaPosts] = useState<Array<{
@@ -1450,6 +1454,35 @@ export default function PhoneInterface({
                   <span className="text-[9px] text-slate-500 font-mono">{track.style}</span>
                 </button>
               ))}
+            </div>
+
+            {/* Haptic Vibration Control within Phone */}
+            <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-2xl flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-200">
+                  <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>{language === "es" ? "Vibración Háptica Android" : "Android Haptics"}</span>
+                </div>
+                <p className="text-[9px] text-slate-400 mt-0.5">
+                  {language === "es"
+                    ? "Desactivada por defecto. Toca para activar o desactivar la respuesta física."
+                    : "Disabled by default. Tap to toggle physical vibration."}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  const next = !phoneHapticsOn;
+                  setPhoneHapticsOn(next);
+                  androidBridge.setHapticsEnabled(next);
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1 cursor-pointer ${
+                  phoneHapticsOn
+                    ? "bg-cyan-500/20 border-cyan-500 text-cyan-300 shadow-sm shadow-cyan-500/20"
+                    : "bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                {phoneHapticsOn ? (language === "es" ? "Activada" : "Enabled") : (language === "es" ? "Desactivada" : "Disabled")}
+              </button>
             </div>
           </div>
         )}

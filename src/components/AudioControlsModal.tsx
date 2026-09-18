@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Volume2, VolumeX, Music, Bell, X } from "lucide-react";
+import { Volume2, VolumeX, Music, Bell, X, Smartphone, Check } from "lucide-react";
 import { soundEngine } from "../lib/soundEngine";
+import { androidBridge } from "../lib/androidMobileBridge";
 import { Language } from "../types";
 
 interface AudioControlsModalProps {
@@ -13,6 +14,7 @@ export default function AudioControlsModal({ language, onClose }: AudioControlsM
   const [bgmVol, setBgmVol] = useState<number>(() => soundEngine.getBgmVolume());
   const [sfxVol, setSfxVol] = useState<number>(() => soundEngine.getSfxVolume());
   const [isMuted, setIsMuted] = useState<boolean>(() => soundEngine.isAudioMuted());
+  const [hapticsOn, setHapticsOn] = useState<boolean>(() => androidBridge.isHapticsEnabled());
 
   const handleBgmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = parseFloat(e.target.value);
@@ -34,6 +36,12 @@ export default function AudioControlsModal({ language, onClose }: AudioControlsM
     if (!next) {
       soundEngine.playTone(520, "sine", 0.1);
     }
+  };
+
+  const toggleHaptics = () => {
+    const next = !hapticsOn;
+    setHapticsOn(next);
+    androidBridge.setHapticsEnabled(next);
   };
 
   return (
@@ -112,9 +120,35 @@ export default function AudioControlsModal({ language, onClose }: AudioControlsM
           />
         </div>
 
+        {/* Haptic Feedback (Vibration) Toggle - Disabled by default */}
+        <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-xl flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-1.5">
+              <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-xs font-semibold text-white">
+                {isEs ? "Vibración Háptica" : "Haptic Vibration"}
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-400 mt-0.5">
+              {isEs ? "Retroalimentación táctil en botones y combates" : "Tactile rumble on buttons and combat"}
+            </p>
+          </div>
+          <button
+            onClick={toggleHaptics}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1 cursor-pointer ${
+              hapticsOn
+                ? "bg-cyan-500/20 border-cyan-500 text-cyan-300 shadow-sm shadow-cyan-500/20"
+                : "bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            {hapticsOn && <Check className="w-3.5 h-3.5" />}
+            {hapticsOn ? (isEs ? "Activada" : "Enabled") : (isEs ? "Desactivada" : "Disabled")}
+          </button>
+        </div>
+
         <button
           onClick={onClose}
-          className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-bold text-xs border border-slate-700 mt-2"
+          className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-bold text-xs border border-slate-700 mt-2 cursor-pointer"
         >
           {isEs ? "Listo" : "Done"}
         </button>

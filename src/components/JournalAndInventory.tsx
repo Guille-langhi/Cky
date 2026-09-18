@@ -34,6 +34,7 @@ import {
 import { ACHIEVEMENTS_LIST, getUnlockedAchievementIds } from "../data/achievements";
 import { ACCESSORIES_DATABASE } from "../data/accessories";
 import { AccessoryItem } from "../types";
+import { androidBridge } from "../lib/androidMobileBridge";
 
 interface JournalAndInventoryProps {
   language: Language;
@@ -59,6 +60,7 @@ interface JournalAndInventoryProps {
   onOpenPhone?: () => void;
   onOpenSaveLoadModal?: (mode: "save" | "load") => void;
   onOpenDevModal?: () => void;
+  onOpenAudioModal?: () => void;
   currentDay?: number;
 }
 
@@ -86,6 +88,7 @@ export default function JournalAndInventory({
   onOpenPhone,
   onOpenSaveLoadModal,
   onOpenDevModal,
+  onOpenAudioModal,
   currentDay = 1
 }: JournalAndInventoryProps) {
   const [selectedDiaryDay, setSelectedDiaryDay] = useState<number>(currentDay || 1);
@@ -111,6 +114,15 @@ export default function JournalAndInventory({
   }, [currentMapId]);
 
   const [invCategory, setInvCategory] = useState<"backpack" | "pockets" | "accessories">("backpack");
+  
+  // Haptic feedback state (disabled by default, managed by androidBridge)
+  const [hapticsEnabled, setHapticsEnabled] = useState<boolean>(() => androidBridge.isHapticsEnabled());
+
+  const handleToggleHaptics = () => {
+    const next = !hapticsEnabled;
+    setHapticsEnabled(next);
+    androidBridge.setHapticsEnabled(next);
+  };
   
   // Equipped RPG Accessories State (Persistent in localStorage)
   const [equippedAccessories, setEquippedAccessories] = useState<string[]>(() => {
@@ -2576,21 +2588,34 @@ export default function JournalAndInventory({
               {/* Volume Silent toggler */}
               <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
                 <div>
-                  <h4 className="font-bold text-white text-xs">{language === "es" ? "Mundo Silencioso" : "Silent World"}</h4>
+                  <h4 className="font-bold text-white text-xs">{language === "es" ? "Mundo Silencioso & Audio" : "Silent World & Audio"}</h4>
                   <p className="text-[9px] text-slate-500 mt-0.5">
-                    {language === "es" ? "Configuración de audio de fondo." : "Background audio setting."}
+                    {language === "es" ? "Ajustes de música de fondo y SFX." : "BGM and SFX volume settings."}
                   </p>
                 </div>
-                <button
-                  onClick={onToggleSound}
-                  className={`p-2 rounded-lg border ${
-                    isSilent
-                      ? "text-slate-500 border-slate-800 hover:border-slate-700"
-                      : "text-yellow-500 border-yellow-500/20 bg-yellow-500/5 hover:bg-yellow-500/10"
-                  }`}
-                >
-                  {isSilent ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={onToggleSound}
+                    className={`p-2 rounded-lg border ${
+                      isSilent
+                        ? "text-slate-500 border-slate-800 hover:border-slate-700"
+                        : "text-yellow-500 border-yellow-500/20 bg-yellow-500/5 hover:bg-yellow-500/10"
+                    }`}
+                    title={isSilent ? (language === "es" ? "Activar sonido" : "Enable sound") : (language === "es" ? "Silenciar mundo" : "Mute world")}
+                  >
+                    {isSilent ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                  </button>
+
+                  {onOpenAudioModal && (
+                    <button
+                      onClick={onOpenAudioModal}
+                      className="p-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 transition-colors"
+                      title={language === "es" ? "Ajustes de Audio y BGM" : "Audio & BGM Settings"}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Dangerous Area Reset */}
@@ -2603,10 +2628,38 @@ export default function JournalAndInventory({
                 </div>
                 <button
                   onClick={onResetGame}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/20 rounded-lg text-xs font-bold transition-all"
+                  className="flex items-center gap-1 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/20 rounded-lg text-xs font-bold transition-all cursor-pointer"
                 >
                   <RefreshCw className="w-3.5 h-3.5 animate-spin-slow" />
                   <span>{language === "es" ? "Re-iniciar" : "Reset"}</span>
+                </button>
+              </div>
+
+              {/* Haptic Vibration Option (Disabled by default) */}
+              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between sm:col-span-2">
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
+                    <h4 className="font-bold text-white text-xs">
+                      {language === "es" ? "Vibración Háptica para Android" : "Android Haptic Vibration"}
+                    </h4>
+                  </div>
+                  <p className="text-[9px] text-slate-500 mt-0.5">
+                    {language === "es"
+                      ? "Desactivada por defecto. Activa la respuesta por vibración en el mando táctil, botones y combates."
+                      : "Disabled by default. Enables rumble feedback on touch gamepad, buttons and combat."}
+                  </p>
+                </div>
+                <button
+                  onClick={handleToggleHaptics}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1 cursor-pointer ${
+                    hapticsEnabled
+                      ? "bg-cyan-500/20 border-cyan-500 text-cyan-300 shadow-sm shadow-cyan-500/20"
+                      : "bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  {hapticsEnabled && <Check className="w-3.5 h-3.5" />}
+                  {hapticsEnabled ? (language === "es" ? "Activada" : "Enabled") : (language === "es" ? "Desactivada" : "Disabled")}
                 </button>
               </div>
 

@@ -1,12 +1,47 @@
 // Android Mobile Enhancement Bridge: Wake Lock, Storage Persistence, and Advanced Haptic Engine 2.0
 
+const HAPTIC_STORAGE_KEY = "cky_android_haptics_enabled";
+
 class AndroidMobileBridge {
   private wakeLockSentinel: any = null;
   private isWakeLockSupported: boolean = false;
+  // Haptics are disabled by default as requested by the user, only enabled if user turns it on
+  private hapticsEnabled: boolean = false;
 
   constructor() {
-    if (typeof window !== "undefined" && "wakeLock" in navigator) {
-      this.isWakeLockSupported = true;
+    if (typeof window !== "undefined") {
+      if ("wakeLock" in navigator) {
+        this.isWakeLockSupported = true;
+      }
+      try {
+        const stored = localStorage.getItem(HAPTIC_STORAGE_KEY);
+        // Default is FALSE (disabled)
+        this.hapticsEnabled = stored === "true";
+      } catch {
+        this.hapticsEnabled = false;
+      }
+    }
+  }
+
+  // Getter and Setter for Haptic Feedback
+  public isHapticsEnabled(): boolean {
+    return this.hapticsEnabled;
+  }
+
+  public setHapticsEnabled(enabled: boolean): void {
+    this.hapticsEnabled = enabled;
+    try {
+      localStorage.setItem(HAPTIC_STORAGE_KEY, enabled ? "true" : "false");
+    } catch {
+      // Safe fallback
+    }
+    // Provide a brief confirmation vibration when enabling
+    if (enabled && typeof navigator !== "undefined" && navigator.vibrate) {
+      try {
+        navigator.vibrate([15, 30, 20]);
+      } catch {
+        // Ignore
+      }
     }
   }
 
@@ -79,6 +114,9 @@ class AndroidMobileBridge {
 
   // --- 3. Advanced Haptic Feedback Engine 2.0 ---
   public vibrate(pattern: number | number[]): void {
+    // Only vibrate if explicitly enabled by the user in options
+    if (!this.hapticsEnabled) return;
+
     if (typeof navigator !== "undefined" && navigator.vibrate) {
       try {
         navigator.vibrate(pattern);
