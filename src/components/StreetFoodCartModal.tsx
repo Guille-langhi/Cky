@@ -87,6 +87,19 @@ const MENU_ITEMS: CartProduct[] = [
     thirstRestore: 50,
     phraseEs: "¡EL COMBO DE LOS CAMPEONES! ¡Vas a quedar con la panza llena hasta el jueves!",
     phraseEn: "THE CHAMPION COMBO! Your belly will be full until Thursday!"
+  },
+  {
+    id: "combo_10print_dev_special",
+    nameEs: "Promo Dev 10Print_ Studios 👾",
+    nameEn: "10Print_ Studios Dev Special 👾",
+    price: 350,
+    icon: "🎮",
+    descEs: "Pancho Doble con lluvia de papas pay, chimichurri especial y coquita helada. ¡El combustible oficial de los creadores de 10Print_!",
+    descEn: "Double hot dog with crispy potato sticks, special chimichurri and ice cold soda. The official fuel of 10Print_ devs!",
+    hungerRestore: 95,
+    thirstRestore: 60,
+    phraseEs: "¡EL COMBO 10PRINT_! ¡Con esto programás toda la noche o le ganás a tres sombras del Limbo juntas!",
+    phraseEn: "THE 10PRINT_ COMBO! Fuel up to code all night or smash three Limbo shadows in a row!"
   }
 ];
 
@@ -239,12 +252,18 @@ export default function StreetFoodCartModal({
         </div>
 
         {/* Footer */}
-        <button
-          onClick={onClose}
-          className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs uppercase transition-colors cursor-pointer"
-        >
-          {language === "es" ? "Listo, ¡muchas gracias Don Pepe!" : "Done, thanks Don Pepe!"}
-        </button>
+        <div className="space-y-2">
+          <button
+            onClick={onClose}
+            className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs uppercase transition-colors cursor-pointer"
+          >
+            {language === "es" ? "Listo, ¡muchas gracias Don Pepe!" : "Done, thanks Don Pepe!"}
+          </button>
+          <div className="text-[9px] text-center text-slate-500 flex items-center justify-center gap-1">
+            <span>👾</span>
+            <span>{language === "es" ? "Puesto de comida auspiciado con cariño por 10Print_ Studios" : "Street cart lovingly sponsored by 10Print_ Studios"}</span>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -2368,8 +2368,14 @@ export default function App() {
                   </button>
                 </div>
 
-                <div className="mt-8 text-[9px] font-mono text-slate-500 uppercase tracking-wider">
-                  {language === "es" ? "Basado en La Biblia del Proyecto CKY v1.0" : "Based on CKY Project Bible v1.0"}
+                <div className="mt-6 flex flex-col items-center gap-1">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-400/90 font-mono tracking-wider uppercase">
+                    <span>👾</span>
+                    <span>10Print_ Studios • Edición Oficial Android</span>
+                  </div>
+                  <div className="text-[9px] font-mono text-slate-500 uppercase tracking-wider">
+                    {language === "es" ? "Basado en La Biblia del Proyecto CKY • Creado por 10Print_" : "Based on CKY Project Bible • Created by 10Print_"}
+                  </div>
                 </div>
               </div>
             )}

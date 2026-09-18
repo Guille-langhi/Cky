@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { X, ClipboardList, CheckCircle, Clock, Award, Sparkles } from "lucide-react";
 import { Language, InventoryItem } from "../types";
 import { soundEngine } from "../lib/soundEngine";
+import { unlockAchievement } from "../data/achievements";
 
 interface TownNoticeBoardModalProps {
   language: Language;
@@ -68,6 +69,18 @@ const QUESTS: TownQuest[] = [
     rewardMoney: 400,
     rewardXP: 45,
     icon: "⛲"
+  },
+  {
+    id: "quest_10print_retro_tester",
+    titleEs: "Betatester Oficial de 10Print_ Studios",
+    titleEn: "10Print_ Studios Official Playtester",
+    authorEs: "10Print_ Studios (Desarrolladores)",
+    authorEn: "10Print_ Studios (Game Devs)",
+    descEs: "¡El estudio creador 10Print_ busca betatesters en el pueblo para certificar el rendimiento retro y reportar bromas cósmicas! Recibí la bendición y recompensa oficial.",
+    descEn: "Indie studio 10Print_ seeks brave town playtesters to certify retro performance and report cosmic banter! Receive official developer blessings and bounty.",
+    rewardMoney: 600,
+    rewardXP: 60,
+    icon: "👾"
   }
 ];
 
@@ -99,6 +112,10 @@ export default function TownNoticeBoardModal({
     soundEngine.playSfx("fanfare");
     onAddMoney(quest.rewardMoney);
     onAddXP(quest.rewardXP);
+
+    if (quest.id === "quest_10print_retro_tester") {
+      unlockAchievement("ach_10print_fan", onShowNotification, onAddXP);
+    }
 
     if (onShowNotification) {
       onShowNotification({

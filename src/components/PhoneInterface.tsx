@@ -222,6 +222,22 @@ export default function PhoneInterface({
           { author: "W (Guardián)", text: "¡Mi honor ancestral vigilará que la decencia no perezca ante el desmadre!" },
           { author: "CKY", text: "¡No me quemen que Mamá lee este muro!" }
         ]
+      },
+      {
+        id: "post_10print_official",
+        author: "10Print_ Studios (Oficial) 👾",
+        avatar: "🎮",
+        time: "Hace 5 min",
+        caption: "🚀 ¡Gracias a todos los jugadores por acompañarnos en CKY RPG para Android! Desarrollado con pasión, café y sándwiches de salame. ¿Ya descubrieron todos los secretos del pueblo? Dejen su reseña y compartan con amigos. #10Print_ #IndieDev #CKYRPG #PixelArt",
+        icon: "🌟",
+        likes: 1250,
+        userLiked: false,
+        comments: [
+          { author: "CKY", text: "¡El mejor juego de todos! Pero aflojen con las tareas escolares jaja 💖" },
+          { author: "Ángela", text: "¡Pónganme más facha en la próxima actualización, desarrolladores de 10Print_!" },
+          { author: "W (Guardián)", text: "Doy mi bendición sagrada a las líneas de código de 10Print_ Studios." },
+          { author: "Mateo", text: "10Print_ agreguen un modo torneo de penales por favor crackss!" }
+        ]
       }
     ];
   });
@@ -1612,6 +1628,18 @@ export default function PhoneInterface({
                   )}
                 </div>
               ))}
+            </div>
+
+            {/* 10Print_ Studios Community Sponsor Banner */}
+            <div className="bg-gradient-to-r from-purple-950/60 via-slate-900 to-pink-950/60 border border-purple-500/40 rounded-2xl p-3 text-center space-y-1">
+              <p className="text-[10px] font-bold text-amber-300 uppercase tracking-widest flex items-center justify-center gap-1.5">
+                <span>👾</span> 10Print_ Studios Gaming Network
+              </p>
+              <p className="text-[9px] text-slate-400">
+                {language === "es"
+                  ? "Auspiciante oficial de InstaCKY. ¡Pasión por los videojuegos retro, humor independiente y aventuras épicas!"
+                  : "Official sponsor of InstaCKY. Passion for retro gaming, indie humor, and epic adventures!"}
+              </p>
             </div>
           </div>
         )}

@@ -106,8 +106,14 @@ export default function Day8Chapter1EndingModal({
           <h1 className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-400 to-purple-400 tracking-wider">
             {isEs ? "FIN DEL CAPÍTULO 1" : "END OF CHAPTER 1"}
           </h1>
-          <p className="text-xs font-bold text-slate-400 tracking-widest uppercase">
-            Creado por 10print_
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-sm">👾</span>
+            <p className="text-xs font-bold text-amber-300 tracking-widest uppercase">
+              {isEs ? "Desarrollado y Creado por 10Print_ Studios" : "Developed & Created by 10Print_ Studios"}
+            </p>
+          </div>
+          <p className="text-[10px] text-slate-400 font-mono">
+            {isEs ? "¡Gracias por jugar la versión oficial para Android!" : "Thank you for playing the official Android release!"}
           </p>
         </div>
 

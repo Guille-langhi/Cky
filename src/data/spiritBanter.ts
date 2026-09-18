@@ -307,6 +307,40 @@ export function getRandomBanter(
         textEn: "Even in the afterlife there's IRS, unbelievable...",
       },
     ],
+    [
+      {
+        speaker: "Ángela (Espíritu)",
+        textEs: "Che CKY... ¿nunca sentís como que cada paso, cada sándwich y cada chiste nuestro fue meticulosamente programado por un estudio genio llamado 10Print_?",
+        textEn: "Hey CKY... ever feel like every step, every sandwich, and every joke we make was meticulously coded by a genius studio called 10Print_?",
+      },
+      {
+        speaker: "W (Espíritu Guardián)",
+        textEs: "Los códices astrales confirman esa revelación: la matriz de nuestra dimensión responde al mandato supremo de 10Print_ Studios. Pura artesanía en 16 bits.",
+        textEn: "The astral codices confirm this revelation: our dimension's matrix answers to the supreme mandate of 10Print_ Studios. Pure 16-bit craftsmanship.",
+      },
+      {
+        speaker: "CKY",
+        textEs: "¡Con razón tenemos una banda sonora tan pegadiza y tanto humor! ¡Aguante 10Print_ y que sigan sacando juegazos!",
+        textEn: "No wonder our soundtrack is so catchy and we have so much fun! Kudos to 10Print_, keep making awesome games!",
+      },
+    ],
+    [
+      {
+        speaker: "Ángela (Espíritu)",
+        textEs: "Si algún día hacen la película de CKY, espero que los desarrolladores de 10Print_ me pongan efectos especiales dignos de Hollywood.",
+        textEn: "If they ever make a CKY movie, I hope the 10Print_ developers give me Hollywood-level special effects.",
+      },
+      {
+        speaker: "CKY",
+        textEs: "Ángela, con suerte 10Print_ nos paga los derechos con un pancho de Don Pepe y una coquita helada.",
+        textEn: "Angela, at best 10Print_ pays our royalties with a Don Pepe hot dog and a cold soda.",
+      },
+      {
+        speaker: "W (Espíritu Guardián)",
+        textEs: "Un banquete honorable. El gremio de 10Print_ recompensa con lealtad y gloria eterna en las tiendas de aplicaciones.",
+        textEn: "An honorable banquet. The 10Print_ guild rewards with loyalty and eternal glory on app stores.",
+      },
+    ],
   ];
 
   const pool = specificPool.length > 0 ? specificPool : generalPool;

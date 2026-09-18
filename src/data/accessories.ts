@@ -81,4 +81,32 @@ export const ACCESSORIES_DATABASE: AccessoryItem[] = [
       damageBoost: 15,
     },
   },
+  {
+    id: "pin_10print_retro",
+    nameEs: "Pin Esmaltado de 10Print_ Studios",
+    nameEn: "10Print_ Studios Enamel Pin",
+    descEs: "Pin conmemorativo coleccionable forjado por el estudio indie 10Print_. Al llevarlo prendido en la mochila o campera, canaliza la magia de los videojuegos retro: aumenta la ganancia de XP y otorga suerte legendaria.",
+    descEn: "Collectible enamel pin crafted by indie studio 10Print_. Wearing it channels retro gaming magic: boosts XP gains and grants legendary combat luck.",
+    icon: "👾",
+    bonusEs: "+20% Ganancia de XP y +15% Probabilidad de Golpe Crítico",
+    bonusEn: "+20% XP Gain & +15% Critical Hit Chance",
+    statBonus: {
+      critRate: 15,
+      damageBoost: 10,
+    },
+  },
+  {
+    id: "gorra_10print_dev",
+    nameEs: "Gorra Gamer de 10Print_ Studios",
+    nameEn: "10Print_ Studios Gamer Cap",
+    descEs: "Gorra urbana bordada con el logo distintivo de 10Print_ Studios. Usada por los desarrolladores de videojuegos para programar aventuras legendarias y protegerse del sol.",
+    descEn: "Urban embroidered cap featuring the distinctive 10Print_ Studios logo. Worn by game developers to craft legendary adventures.",
+    icon: "🧢",
+    bonusEs: "+15 Velocidad de Turno y +15% Evasión Táctica",
+    bonusEn: "+15 Turn Speed & +15% Tactical Evasion",
+    statBonus: {
+      speed: 15,
+      evasion: 15,
+    },
+  },
 ];

@@ -253,4 +253,74 @@ export const DEFAULT_PHONE_CHATS: PhoneChat[] = [
       },
     ],
   },
+  {
+    id: "chat_10print_studios",
+    contactName: "10Print_ Studios (VIP Oficial) 👾",
+    avatar: "🎮",
+    unread: true,
+    messages: [
+      {
+        id: "10print_1",
+        sender: "10Print_ Dev Team",
+        textEs: "👾 ¡Hola CKY! Te escribimos directamente desde el cuartel general de 10Print_ Studios. Queríamos felicitarte por tu valentía enfrentando las sombras del Limbo y por bancarte las locuras de Ángela y W.",
+        textEn: "👾 Hey CKY! We're texting you straight from 10Print_ Studios headquarters. Wanted to salute your bravery against Limbo shadows and enduring Angela and W's chaos.",
+        timestamp: "07:45",
+        isPlayer: false,
+      },
+      {
+        id: "10print_2",
+        sender: "10Print_ Dev Team",
+        textEs: "¿Cómo va ese sándwich de salame? Recordá que en 10Print_ programamos cada rincón del pueblo con puro cariño indie y humor argento.",
+        textEn: "How's that salami sandwich going? Remember at 10Print_ we coded every town corner with indie passion and classic humor.",
+        timestamp: "07:46",
+        isPlayer: false,
+      },
+    ],
+    replies: [
+      {
+        textEs: "¡Hola 10Print_! ¡El juego está buenísimo pero las cucarachas del ropero eran gigantes! 😂",
+        textEn: "Hey 10Print_! The game is awesome, but those wardrobe roaches were huge! 😂",
+        nextMessages: [
+          {
+            id: "10print_r1",
+            sender: "10Print_ Dev Team",
+            textEs: "¡Jajaja! Esas cucarachas fueron modeladas a mano pixel por pixel. ¡Te dejamos activada una bendición especial de +15% de suerte cósmica! ¡Gracias por apoyar a 10Print_ Studios!",
+            textEn: "Hahaha! Those roaches were hand-crafted pixel by pixel. We granted you a special +15% cosmic luck buff! Thanks for supporting 10Print_ Studios!",
+            timestamp: "07:48",
+            isPlayer: false,
+          },
+        ],
+        nextReplies: [
+          {
+            textEs: "¡Aguante 10Print_! ¡Les dejo 5 estrellas de cabeza!",
+            textEn: "Long live 10Print_! 5 stars review incoming for sure!",
+            nextMessages: [
+              {
+                id: "10print_r2",
+                sender: "10Print_ Dev Team",
+                textEs: "¡Sos una genia CKY! ¡Que disfrutes la aventura y a romperla en la escuela y en el Limbo! 🚀✨",
+                textEn: "You rock CKY! Enjoy the adventure and rock it at school and Limbo! 🚀✨",
+                timestamp: "07:50",
+                isPlayer: false,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        textEs: "Che gente de 10Print_, ¿pueden programar que el profesor Montenegro no tome prueba hoy?",
+        textEn: "Hey 10Print_ devs, can you patch the matrix so Montenegro doesn't give a pop quiz today?",
+        nextMessages: [
+          {
+            id: "10print_r3",
+            sender: "10Print_ Dev Team",
+            textEs: "Intentamos hackear la planilla de Montenegro pero su rigidez pedagógica tiene un firewall de 512 bits inexpugnable. ¡Vas a tener que estudiar o pedirle pistas astrales a Ángela! Jajaja.",
+            textEn: "We tried hacking Montenegro's syllabus but his strictness has an impenetrable 512-bit firewall. You gotta study or ask Angela for astral tips! Hahaha.",
+            timestamp: "07:49",
+            isPlayer: false,
+          },
+        ],
+      },
+    ],
+  },
 ];

@@ -48,7 +48,7 @@ export default function Header({
           <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
         </span>
         <span className="text-xs font-mono font-bold text-emerald-400 tracking-wider">
-          {language === "es" ? "SISTEMA ANDROID v1.0" : "ANDROID SYSTEM v1.0"}
+          {language === "es" ? "ANDROID • 10PRINT_ STUDIOS" : "ANDROID • 10PRINT_ STUDIOS"}
         </span>
       </div>
 

@@ -365,6 +365,28 @@ export const ACHIEVEMENTS_LIST: Achievement[] = [
     rarity: "epic",
     xpReward: 50,
   },
+  {
+    id: "ach_10print_fan",
+    titleEs: "Legado de 10Print_ Studios",
+    titleEn: "10Print_ Studios Legacy",
+    descEs: "Descubrir la publicidad y los tributos al estudio 10Print_ en el pueblo.",
+    descEn: "Discover the hidden ads and tributes to 10Print_ Studios across town.",
+    icon: "👾",
+    category: "secrets",
+    rarity: "legendary",
+    xpReward: 50,
+  },
+  {
+    id: "ach_10print_tv",
+    titleEs: "Sintonía Indie",
+    titleEn: "Indie Broadcast",
+    descEs: "Sintonizar el canal especial de 10Print_ Studios en la tele de la cocina.",
+    descEn: "Tune in to the 10Print_ Studios special channel on the kitchen TV.",
+    icon: "📺",
+    category: "lifestyle",
+    rarity: "rare",
+    xpReward: 35,
+  },
 ];
 
 const STORAGE_PREFIX = "cky_ach_";
