@@ -42,7 +42,9 @@ import {
   HelpCircle,
   Smartphone,
   Save,
-  Download
+  Download,
+  Volume2,
+  VolumeX
 } from "lucide-react";
 
 export default function App() {
@@ -83,17 +85,11 @@ export default function App() {
   });
 
   // Android Systems: Screen Wake Lock, Storage Persistence & Background Battery Optimizer
-  const [isStandaloneApp, setIsStandaloneApp] = useState<boolean>(false);
+  const [isStandaloneApp, setIsStandaloneApp] = useState<boolean>(true);
 
   useEffect(() => {
-    // Detect if running inside native Android App (Capacitor/WebView)
-    const isStandalone = 
-      document.referrer.includes("android-app://") ||
-      window.location.href.includes("mode=app") ||
-      (window as any).Capacitor !== undefined ||
-      /Android/i.test(navigator.userAgent);
-    
-    setIsStandaloneApp(isStandalone);
+    // True Fullscreen Android Experience by default
+    setIsStandaloneApp(true);
 
     // 1. Keep screen active while playing
     const cleanupWakeLock = androidBridge.initAutoWakeLock();
@@ -2293,36 +2289,62 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-yellow-500 selection:text-slate-950">
+    <div className="h-[100dvh] h-full w-full overflow-hidden bg-black text-slate-100 flex flex-col font-sans selection:bg-yellow-500 selection:text-slate-950 relative select-none">
       
-      {/* Central custom header switcher (hidden in native standalone Android app) */}
-      {!isStandaloneApp && (
-        <Header
-          language={language}
-          onLanguageChange={setLanguage}
-          isSilent={isSilent}
-          onToggleSound={() => {
+      {/* Floating Slim Android Quick Controls (Save, Sound, Language, APK, Engine HD) */}
+      <div className="fixed top-2.5 right-2.5 z-50 flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md border border-slate-800/90 rounded-full px-2.5 py-1 shadow-2xl pointer-events-auto">
+        <button
+          onClick={() => {
             setIsSilent(!isSilent);
-            // Play note feedback if turning sound on
-            if (isSilent) {
-              setTimeout(() => playSound(520, "sine", 0.2), 50);
-            }
+            if (isSilent) setTimeout(() => playSound(520, "sine", 0.2), 50);
           }}
-          onOpenSaveLoadModal={(mode) => setSaveLoadModalState({ isOpen: true, mode })}
-          onOpenGraphicsSettings={() => setShowGraphicsModal(true)}
-          onOpenAndroidModal={() => setShowAndroidModal(true)}
-          onOpenAudioModal={() => setShowAudioModal(true)}
-        />
-      )}
+          className="p-1.5 text-slate-300 hover:text-white rounded-full transition active:scale-90 cursor-pointer"
+          title={isSilent ? (language === "es" ? "Activar Sonido" : "Unmute") : (language === "es" ? "Silenciar" : "Mute")}
+        >
+          {isSilent ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+        </button>
+
+        <button
+          onClick={() => setLanguage(language === "es" ? "en" : "es")}
+          className="px-2 py-0.5 text-[10px] font-mono font-bold text-yellow-400 border border-yellow-500/40 rounded-full hover:bg-yellow-500/10 transition active:scale-95 cursor-pointer"
+          title="Cambiar Idioma / Switch Language"
+        >
+          {language.toUpperCase()}
+        </button>
+
+        <button
+          onClick={() => setSaveLoadModalState({ isOpen: true, mode: "save" })}
+          className="p-1.5 text-slate-300 hover:text-cyan-400 rounded-full transition active:scale-90 cursor-pointer"
+          title={language === "es" ? "Guardar / Cargar Partida" : "Save / Load Game"}
+        >
+          <Save className="w-4 h-4 text-cyan-400" />
+        </button>
+
+        <button
+          onClick={() => setShowGraphicsModal(true)}
+          className="p-1.5 text-slate-300 hover:text-cyan-300 rounded-full transition active:scale-90 cursor-pointer"
+          title={language === "es" ? "Configuración Gráfica HD" : "HD Graphics Engine"}
+        >
+          <Sparkles className="w-4 h-4 text-cyan-400" />
+        </button>
+
+        <button
+          onClick={() => setShowAndroidModal(true)}
+          className="p-1.5 text-slate-300 hover:text-emerald-400 rounded-full transition active:scale-90 cursor-pointer"
+          title={language === "es" ? "Descargar APK Nativo de Android" : "Download Android APK"}
+        >
+          <Smartphone className="w-4 h-4 text-emerald-400" />
+        </button>
+      </div>
 
       {/* Main Android Game Screen Container */}
-      <main className={`flex-1 w-full mx-auto flex flex-col gap-4 ${isStandaloneApp ? "p-0 max-w-full" : "max-w-7xl p-2 sm:p-4"}`}>
+      <main className="flex-1 w-full h-full flex flex-col overflow-hidden p-0 max-w-full">
         <AndroidDeviceFrame language={language} onOpenInstallModal={() => setShowAndroidModal(true)}>
-          <div className="flex flex-col items-center w-full relative">
+          <div className="flex flex-col items-center w-full h-full flex-1 relative overflow-hidden">
             
-            {/* Title Screen */}
+            {/* Title Screen - Full Vertical Screen */}
             {gameState === "title" && (
-              <div className="flex flex-col items-center justify-center bg-black/90 border-2 border-slate-800 rounded-3xl p-8 py-16 text-center shadow-2xl relative overflow-hidden h-[480px] w-full max-w-3xl my-4">
+              <div className="flex flex-col items-center justify-center bg-black text-center relative overflow-hidden h-full w-full flex-1 p-6">
                 <div className="absolute inset-0 bg-radial-glow opacity-25 pointer-events-none" />
                 
                 <h1 className="text-7xl sm:text-8xl font-extrabold tracking-widest text-yellow-500 font-display animate-pulse select-none drop-shadow-md">
@@ -2382,7 +2404,7 @@ export default function App() {
 
             {/* Main Playing View (Maintains Game Canvas mounted in playing, phone, diary, map & dialogue states) */}
             {(gameState === "playing" || gameState === "dialogue" || gameState === "phone" || gameState === "diary" || gameState === "map") && (
-              <div className="w-full flex flex-col items-center relative">
+              <div className="w-full h-full flex-1 flex flex-col items-center relative overflow-hidden">
                 <GameCanvas
                   language={language}
                   onStateChange={setGameState}
@@ -2595,7 +2617,7 @@ export default function App() {
 
             {/* Boss Confrontation Combat State */}
             {gameState === "combat" && (
-              <div className="w-full max-w-3xl my-4">
+              <div className="w-full h-full flex-1 flex flex-col items-center overflow-y-auto">
                 <CombatSimulator
                   language={language}
                   inventory={inventory}
@@ -2624,7 +2646,7 @@ export default function App() {
 
             {/* Game Cleared Credits Screen */}
             {gameState === "credits" && (
-              <div className="flex flex-col items-center justify-center bg-black border-2 border-yellow-500/50 rounded-3xl p-8 py-12 text-center h-[460px] w-full max-w-3xl overflow-hidden relative shadow-2xl my-4">
+              <div className="flex flex-col items-center justify-center bg-black border-2 border-yellow-500/50 rounded-3xl p-8 py-12 text-center h-full w-full flex-1 overflow-hidden relative shadow-2xl">
                 <div className="absolute inset-0 bg-radial-glow opacity-30 pointer-events-none" />
                 <div className="p-3 bg-yellow-500 rounded-2xl mb-4 text-slate-950">
                   <Sparkles className="w-6 h-6 animate-spin-slow" />

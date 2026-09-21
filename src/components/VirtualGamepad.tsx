@@ -272,46 +272,114 @@ export default function VirtualGamepad({
 
           {/* UP */}
           <button
-            onPointerDown={() => startMoving("up")}
-            onPointerUp={stopMoving}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              try { (e.target as HTMLElement).setPointerCapture(e.pointerId); } catch {}
+              startMoving("up");
+            }}
+            onPointerUp={(e) => {
+              e.preventDefault();
+              try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch {}
+              stopMoving();
+            }}
             onPointerCancel={stopMoving}
-            className="absolute top-1 inset-x-0 mx-auto w-12 h-11 bg-slate-800/95 hover:bg-slate-700/95 active:bg-emerald-600/80 rounded-t-xl border-t border-x border-slate-600 flex items-center justify-center active:scale-95 transition-transform cursor-pointer"
+            onTouchStart={(e) => {
+              e.preventDefault();
+              startMoving("up");
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              stopMoving();
+            }}
+            style={{ touchAction: "none" }}
+            className="absolute top-1 inset-x-0 mx-auto w-12 h-11 bg-slate-800/95 hover:bg-slate-700/95 active:bg-emerald-600/80 rounded-t-xl border-t border-x border-slate-600 flex items-center justify-center active:scale-95 transition-transform cursor-pointer select-none"
             aria-label="Move Up"
           >
-            <ChevronUp className="w-6 h-6 text-slate-200" />
+            <ChevronUp className="w-6 h-6 text-slate-200 pointer-events-none" />
           </button>
 
           {/* DOWN */}
           <button
-            onPointerDown={() => startMoving("down")}
-            onPointerUp={stopMoving}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              try { (e.target as HTMLElement).setPointerCapture(e.pointerId); } catch {}
+              startMoving("down");
+            }}
+            onPointerUp={(e) => {
+              e.preventDefault();
+              try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch {}
+              stopMoving();
+            }}
             onPointerCancel={stopMoving}
-            className="absolute bottom-1 inset-x-0 mx-auto w-12 h-11 bg-slate-800/95 hover:bg-slate-700/95 active:bg-emerald-600/80 rounded-b-xl border-b border-x border-slate-600 flex items-center justify-center active:scale-95 transition-transform cursor-pointer"
+            onTouchStart={(e) => {
+              e.preventDefault();
+              startMoving("down");
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              stopMoving();
+            }}
+            style={{ touchAction: "none" }}
+            className="absolute bottom-1 inset-x-0 mx-auto w-12 h-11 bg-slate-800/95 hover:bg-slate-700/95 active:bg-emerald-600/80 rounded-b-xl border-b border-x border-slate-600 flex items-center justify-center active:scale-95 transition-transform cursor-pointer select-none"
             aria-label="Move Down"
           >
-            <ChevronDown className="w-6 h-6 text-slate-200" />
+            <ChevronDown className="w-6 h-6 text-slate-200 pointer-events-none" />
           </button>
 
           {/* LEFT */}
           <button
-            onPointerDown={() => startMoving("left")}
-            onPointerUp={stopMoving}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              try { (e.target as HTMLElement).setPointerCapture(e.pointerId); } catch {}
+              startMoving("left");
+            }}
+            onPointerUp={(e) => {
+              e.preventDefault();
+              try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch {}
+              stopMoving();
+            }}
             onPointerCancel={stopMoving}
-            className="absolute left-1 inset-y-0 my-auto w-11 h-12 bg-slate-800/95 hover:bg-slate-700/95 active:bg-emerald-600/80 rounded-l-xl border-l border-y border-slate-600 flex items-center justify-center active:scale-95 transition-transform cursor-pointer"
+            onTouchStart={(e) => {
+              e.preventDefault();
+              startMoving("left");
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              stopMoving();
+            }}
+            style={{ touchAction: "none" }}
+            className="absolute left-1 inset-y-0 my-auto w-11 h-12 bg-slate-800/95 hover:bg-slate-700/95 active:bg-emerald-600/80 rounded-l-xl border-l border-y border-slate-600 flex items-center justify-center active:scale-95 transition-transform cursor-pointer select-none"
             aria-label="Move Left"
           >
-            <ChevronLeft className="w-6 h-6 text-slate-200" />
+            <ChevronLeft className="w-6 h-6 text-slate-200 pointer-events-none" />
           </button>
 
           {/* RIGHT */}
           <button
-            onPointerDown={() => startMoving("right")}
-            onPointerUp={stopMoving}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              try { (e.target as HTMLElement).setPointerCapture(e.pointerId); } catch {}
+              startMoving("right");
+            }}
+            onPointerUp={(e) => {
+              e.preventDefault();
+              try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch {}
+              stopMoving();
+            }}
             onPointerCancel={stopMoving}
-            className="absolute right-1 inset-y-0 my-auto w-11 h-12 bg-slate-800/95 hover:bg-slate-700/95 active:bg-emerald-600/80 rounded-r-xl border-r border-y border-slate-600 flex items-center justify-center active:scale-95 transition-transform cursor-pointer"
+            onTouchStart={(e) => {
+              e.preventDefault();
+              startMoving("right");
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              stopMoving();
+            }}
+            style={{ touchAction: "none" }}
+            className="absolute right-1 inset-y-0 my-auto w-11 h-12 bg-slate-800/95 hover:bg-slate-700/95 active:bg-emerald-600/80 rounded-r-xl border-r border-y border-slate-600 flex items-center justify-center active:scale-95 transition-transform cursor-pointer select-none"
             aria-label="Move Right"
           >
-            <ChevronRight className="w-6 h-6 text-slate-200" />
+            <ChevronRight className="w-6 h-6 text-slate-200 pointer-events-none" />
           </button>
         </div>
       )}
@@ -320,28 +388,52 @@ export default function VirtualGamepad({
       <div className="pointer-events-auto flex items-center gap-3.5 pb-2 touch-none">
         {/* Button B: Mochila / Cancelar */}
         <button
-          onClick={() => {
+          onPointerDown={(e) => {
+            e.preventDefault();
             androidBridge.hapticAction();
             onCancelOrBackpack();
           }}
-          className="w-14 h-14 bg-gradient-to-br from-amber-600/90 to-amber-900/90 active:from-amber-500 active:to-amber-800 border-2 border-amber-400/80 rounded-full shadow-2xl flex flex-col items-center justify-center active:scale-90 transition-transform text-white font-bold font-mono cursor-pointer"
+          onTouchStart={(e) => {
+            e.preventDefault();
+            androidBridge.hapticAction();
+            onCancelOrBackpack();
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            androidBridge.hapticAction();
+            onCancelOrBackpack();
+          }}
+          style={{ touchAction: "none" }}
+          className="w-14 h-14 bg-gradient-to-br from-amber-600/90 to-amber-900/90 active:from-amber-500 active:to-amber-800 border-2 border-amber-400/80 rounded-full shadow-2xl flex flex-col items-center justify-center active:scale-90 transition-transform text-white font-bold font-mono cursor-pointer select-none"
           aria-label="Button B"
         >
-          <span className="text-base leading-none">B</span>
-          <span className="text-[8px] text-amber-200 uppercase tracking-tighter">Mochila</span>
+          <span className="text-base leading-none pointer-events-none">B</span>
+          <span className="text-[8px] text-amber-200 uppercase tracking-tighter pointer-events-none">Mochila</span>
         </button>
 
         {/* Button A: Interact / Examine */}
         <button
-          onClick={() => {
+          onPointerDown={(e) => {
+            e.preventDefault();
             androidBridge.hapticAction();
             onAction();
           }}
-          className="w-16 h-16 bg-gradient-to-br from-emerald-500/90 to-emerald-800/90 active:from-emerald-400 active:to-emerald-700 border-2 border-emerald-300/90 rounded-full shadow-2xl flex flex-col items-center justify-center active:scale-90 transition-transform text-white font-extrabold font-mono ring-2 ring-emerald-500/30 cursor-pointer"
+          onTouchStart={(e) => {
+            e.preventDefault();
+            androidBridge.hapticAction();
+            onAction();
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            androidBridge.hapticAction();
+            onAction();
+          }}
+          style={{ touchAction: "none" }}
+          className="w-16 h-16 bg-gradient-to-br from-emerald-500/90 to-emerald-800/90 active:from-emerald-400 active:to-emerald-700 border-2 border-emerald-300/90 rounded-full shadow-2xl flex flex-col items-center justify-center active:scale-90 transition-transform text-white font-extrabold font-mono ring-2 ring-emerald-500/30 cursor-pointer select-none"
           aria-label="Button A"
         >
-          <span className="text-lg leading-none">A</span>
-          <span className="text-[9px] text-emerald-100 uppercase tracking-tighter">Acción</span>
+          <span className="text-lg leading-none pointer-events-none">A</span>
+          <span className="text-[9px] text-emerald-100 uppercase tracking-tighter pointer-events-none">Acción</span>
         </button>
       </div>
     </div>

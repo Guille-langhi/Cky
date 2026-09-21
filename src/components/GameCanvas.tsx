@@ -76,7 +76,9 @@ import {
   Smartphone,
   Users,
   Map,
-  Sliders
+  Sliders,
+  Maximize2,
+  Minimize2
 } from "lucide-react";
 
 interface GameCanvasProps {
@@ -745,6 +747,46 @@ export default function GameCanvas({
   onShowNotification,
 }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const lastTapHandledTimeRef = useRef<number>(0);
+  const currentCameraRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [canvasDimensions, setCanvasDimensions] = useState<{ width: number; height: number }>({
+    width: 400,
+    height: 600,
+  });
+
+  // Dynamic Fullscreen Vertical Canvas Scaling
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (!containerRef.current) return;
+      const { clientWidth, clientHeight } = containerRef.current;
+      if (clientWidth <= 0 || clientHeight <= 0) return;
+
+      const aspect = clientHeight / clientWidth;
+      if (aspect >= 1) {
+        // Vertical mobile/portrait screen: base width 400, scale height to occupy full vertical display
+        const targetHeight = Math.round(400 * aspect);
+        const clampedHeight = Math.max(360, Math.min(880, targetHeight));
+        setCanvasDimensions({ width: 400, height: clampedHeight });
+      } else {
+        // Landscape screen: base height 360, scale width
+        const targetWidth = Math.round(360 / aspect);
+        const clampedWidth = Math.max(400, Math.min(880, targetWidth));
+        setCanvasDimensions({ width: clampedWidth, height: 360 });
+      }
+    };
+
+    updateDimensions();
+    const ro = new ResizeObserver(updateDimensions);
+    if (containerRef.current) {
+      ro.observe(containerRef.current);
+    }
+    window.addEventListener("resize", updateDimensions);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", updateDimensions);
+    };
+  }, []);
 
   // Next-Gen Graphics Engine references and dynamic active config
   const activeGraphicsConfig = propGraphicsConfig || loadGraphicsConfig();
@@ -2264,7 +2306,7 @@ export default function GameCanvas({
     // Prompt
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 10px 'JetBrains Mono', monospace";
-    const promptText = language === "es" ? "[ PRESIONA ENTER / ESPACIO / CLICK ]" : "[ PRESS ENTER / SPACE / CLICK ]";
+    const promptText = language === "es" ? "[ 👉 TOCA LA PANTALLA O BOTÓN (A) ]" : "[ 👉 TAP SCREEN OR BUTTON (A) ]";
     ctx.globalAlpha = pulse;
     ctx.fillText(promptText, width / 2, height - 40);
     ctx.globalAlpha = 1.0;
@@ -2292,7 +2334,7 @@ export default function GameCanvas({
     const pulse = Math.sin(Date.now() / 250) * 0.2 + 0.8;
     ctx.fillStyle = "#94a3b8";
     ctx.font = "bold 9px 'JetBrains Mono', monospace";
-    const promptText = language === "es" ? "[ PRESIONA ENTER / ESPACIO / CLICK ]" : "[ PRESS ENTER / SPACE / CLICK ]";
+    const promptText = language === "es" ? "[ 👉 TOCA LA PANTALLA O BOTÓN (A) ]" : "[ 👉 TAP SCREEN OR BUTTON (A) ]";
     ctx.globalAlpha = pulse;
     ctx.fillText(promptText, width / 2, height - 40);
     ctx.globalAlpha = 1.0;
@@ -2342,7 +2384,7 @@ export default function GameCanvas({
     const pulse = Math.sin(Date.now() / 250) * 0.2 + 0.8;
     ctx.fillStyle = "#94a3b8";
     ctx.font = "bold 9px 'JetBrains Mono', monospace";
-    const promptText = language === "es" ? "[ PRESIONA ENTER / ESPACIO / CLICK ]" : "[ PRESS ENTER / SPACE / CLICK ]";
+    const promptText = language === "es" ? "[ 👉 TOCA LA PANTALLA O BOTÓN (A) ]" : "[ 👉 TAP SCREEN OR BUTTON (A) ]";
     ctx.globalAlpha = pulse;
     ctx.fillText(promptText, width / 2, height - 35);
     ctx.globalAlpha = 1.0;
@@ -2415,7 +2457,7 @@ export default function GameCanvas({
     // Bottom prompt
     ctx.font = "bold 9px 'JetBrains Mono', monospace";
     ctx.fillStyle = "#eab308";
-    const promptText = language === "es" ? "[ PRESIONA ENTER / ESPACIO / CLICK ]" : "[ PRESS ENTER / SPACE / CLICK ]";
+    const promptText = language === "es" ? "[ 👉 TOCA LA PANTALLA O BOTÓN (A) ]" : "[ 👉 TAP SCREEN OR BUTTON (A) ]";
     ctx.globalAlpha = pulse;
     ctx.fillText(promptText, width / 2, boxY + boxH - 22);
     ctx.globalAlpha = 1.0;
@@ -2490,7 +2532,7 @@ export default function GameCanvas({
     const pulse = Math.sin(Date.now() / 250) * 0.2 + 0.8;
     ctx.fillStyle = "#eab308";
     ctx.font = "bold 9px 'JetBrains Mono', monospace";
-    const promptText = language === "es" ? "[ PRESIONA ENTER / ESPACIO / CLICK ]" : "[ PRESS ENTER / SPACE / CLICK ]";
+    const promptText = language === "es" ? "[ 👉 TOCA LA PANTALLA O BOTÓN (A) ]" : "[ 👉 TAP SCREEN OR BUTTON (A) ]";
     ctx.globalAlpha = pulse;
     ctx.fillText(promptText, width / 2, boxY + boxH - 22);
     ctx.globalAlpha = 1.0;
@@ -2542,7 +2584,7 @@ export default function GameCanvas({
     ctx.fillStyle = "#a1a1aa";
     ctx.font = "bold 7px 'JetBrains Mono', monospace";
     ctx.textAlign = "right";
-    const prompt = language === "es" ? "[ ESPACIO/CLICK ]" : "[ SPACE/CLICK ]";
+    const prompt = language === "es" ? "[ 👉 TOCAR / BOTÓN A ]" : "[ 👉 TAP / BUTTON A ]";
     const pulse = Math.sin(Date.now() / 200) * 0.2 + 0.8;
     ctx.globalAlpha = pulse;
     ctx.fillText(prompt, boxX + boxW - 12, boxY + boxH - 18);
@@ -2591,7 +2633,7 @@ export default function GameCanvas({
     const pulse = Math.sin(Date.now() / 250) * 0.2 + 0.8;
     ctx.fillStyle = "#94a3b8";
     ctx.font = "bold 9px 'JetBrains Mono', monospace";
-    const promptText = language === "es" ? "[ PRESIONA ENTER / ESPACIO / CLICK ]" : "[ PRESS ENTER / SPACE / CLICK ]";
+    const promptText = language === "es" ? "[ 👉 TOCA LA PANTALLA O BOTÓN (A) ]" : "[ 👉 TAP SCREEN OR BUTTON (A) ]";
     ctx.globalAlpha = pulse;
     ctx.fillText(promptText, width / 2, height - 35);
     ctx.globalAlpha = 1.0;
@@ -2683,7 +2725,7 @@ export default function GameCanvas({
     const pulse = Math.sin(Date.now() / 250) * 0.2 + 0.8;
     ctx.fillStyle = "#94a3b8";
     ctx.font = "bold 9px 'JetBrains Mono', monospace";
-    const promptText = language === "es" ? "[ PRESIONA ENTER / ESPACIO / CLICK ]" : "[ PRESS ENTER / SPACE / CLICK ]";
+    const promptText = language === "es" ? "[ 👉 TOCA LA PANTALLA O BOTÓN (A) ]" : "[ 👉 TAP SCREEN OR BUTTON (A) ]";
     ctx.globalAlpha = pulse;
     ctx.fillText(promptText, width / 2, height - 35);
     ctx.globalAlpha = 1.0;
@@ -2776,7 +2818,7 @@ export default function GameCanvas({
     const pulse = Math.sin(Date.now() / 250) * 0.2 + 0.8;
     ctx.fillStyle = "#94a3b8";
     ctx.font = "bold 9px 'JetBrains Mono', monospace";
-    const promptText = language === "es" ? "[ PRESIONA ENTER / ESPACIO / CLICK ]" : "[ PRESS ENTER / SPACE / CLICK ]";
+    const promptText = language === "es" ? "[ 👉 TOCA LA PANTALLA O BOTÓN (A) ]" : "[ 👉 TAP SCREEN OR BUTTON (A) ]";
     ctx.globalAlpha = pulse;
     ctx.fillText(promptText, width / 2, height - 35);
     ctx.globalAlpha = 1.0;
@@ -2878,11 +2920,11 @@ export default function GameCanvas({
     ctx.restore();
 
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px 'JetBrains Mono', monospace, sans-serif";
+    ctx.font = "bold 9px 'JetBrains Mono', monospace, sans-serif";
     const promptText =
       language === "es"
-        ? "Presiona [ESPACIO] o [ENTER] o haz clic para despertar"
-        : "Press [SPACE] or [ENTER] or click to wake up";
+        ? "[ 👉 TOCA LA PANTALLA O BOTÓN (A) ]"
+        : "[ 👉 TAP SCREEN OR BUTTON (A) ]";
     ctx.fillText(promptText, width / 2, height - 35);
     ctx.globalAlpha = 1.0;
   };
@@ -2981,11 +3023,11 @@ export default function GameCanvas({
     ctx.restore();
 
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px 'JetBrains Mono', monospace, sans-serif";
+    ctx.font = "bold 9px 'JetBrains Mono', monospace, sans-serif";
     const promptText =
       language === "es"
-        ? "Presiona [ESPACIO] o [ENTER] o haz clic para despertar"
-        : "Press [SPACE] or [ENTER] or click to wake up";
+        ? "[ 👉 TOCA LA PANTALLA O BOTÓN (A) ]"
+        : "[ 👉 TAP SCREEN OR BUTTON (A) ]";
     ctx.fillText(promptText, width / 2, height - 35);
     ctx.globalAlpha = 1.0;
   };
@@ -3074,11 +3116,11 @@ export default function GameCanvas({
     ctx.restore();
 
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px 'JetBrains Mono', monospace, sans-serif";
+    ctx.font = "bold 9px 'JetBrains Mono', monospace, sans-serif";
     const promptText =
       language === "es"
-        ? "Presiona [ESPACIO] o [ENTER] o haz clic para despertar"
-        : "Press [SPACE] or [ENTER] or click to wake up";
+        ? "[ 👉 TOCA LA PANTALLA O BOTÓN (A) ]"
+        : "[ 👉 TAP SCREEN OR BUTTON (A) ]";
     ctx.fillText(promptText, width / 2, height - 35);
     ctx.globalAlpha = 1.0;
   };
@@ -3193,11 +3235,11 @@ export default function GameCanvas({
     ctx.restore();
 
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px 'JetBrains Mono', monospace, sans-serif";
+    ctx.font = "bold 9px 'JetBrains Mono', monospace, sans-serif";
     const promptText =
       language === "es"
-        ? "Presiona [ESPACIO] o [ENTER] o haz clic para despertar"
-        : "Press [SPACE] or [ENTER] or click to wake up";
+        ? "[ 👉 TOCA LA PANTALLA O BOTÓN (A) ]"
+        : "[ 👉 TAP SCREEN OR BUTTON (A) ]";
     ctx.fillText(promptText, width / 2, height - 35);
     ctx.globalAlpha = 1.0;
   };
@@ -4385,13 +4427,13 @@ export default function GameCanvas({
         dialogEs: [
           "Bienvenida al Limbo, CKY. No temas, la muerte espiritual es solo un portal de regreso.",
           "Para derrotar al Espíritu Oscuro, debes ESCUCHAR su debilidad.",
-          "Usa tu poder 'Ver lo Invisible' pulsando ESPACIO en el combate para revelar su núcleo oscuro y ataca.",
+          "Usa tu poder 'Ver lo Invisible' pulsando BOTÓN (A) o TOCANDO en el combate para revelar su núcleo oscuro y ataca.",
           "¡Cruza el portal azul cuando estés lista para volver a intentarlo!"
         ],
         dialogEn: [
           "Welcome to Limbo, CKY. Fear not, spiritual death is just a portal back.",
           "To defeat the Dark Spirit, you must LISTEN to its weakness.",
-          "Use your power 'Ver lo Invisible' by pressing SPACE in combat to reveal its dark core and attack.",
+          "Use your power 'Ver lo Invisible' by tapping or pressing (A) in combat to reveal its dark core and attack.",
           "Cross the blue portal when you are ready to try again!"
         ]
       });
@@ -4828,6 +4870,8 @@ export default function GameCanvas({
       } else {
         cameraY = -(canvas.height - gridHeight) / 2;
       }
+
+      currentCameraRef.current = { x: cameraX, y: cameraY };
 
       ctx.save();
       ctx.translate(-Math.floor(cameraX), -Math.floor(cameraY));
@@ -8822,7 +8866,7 @@ export default function GameCanvas({
         // Action tooltip
         ctx.fillStyle = "#eab308";
         ctx.font = "bold 10px 'JetBrains Mono'";
-        const text = language === "es" ? "[ESPACIO] Interactuar" : "[SPACE] Interact";
+        const text = language === "es" ? "[ BOTÓN A / TOCAR ] Interactuar" : "[ BUTTON A / TAP ] Interact";
         ctx.fillText(text, px, py - 32);
       }
 
@@ -9833,6 +9877,20 @@ export default function GameCanvas({
 
   const handleGamepadMove = (dir: Direction) => {
     soundEngine.unlockAudio();
+    
+    // If an intro or morning dialogue is active, advance / dismiss it!
+    if (introStep !== -1) {
+      advanceIntro();
+      if (introStep !== 5) return;
+    }
+    if (isDay2Intro) { advanceDay2Intro(); return; }
+    if (isDay3Intro) { advanceDay3Intro(); return; }
+    if (isDay4Intro) { advanceDay4Intro(); return; }
+    if (isDay5Intro) { advanceDay5Intro(); return; }
+    if (isDay6Intro) { advanceDay6Intro(); return; }
+    if (isDay7Intro) { advanceDay7Intro(); return; }
+    if (isDay8Intro) { advanceDay8Intro(); return; }
+
     setWalkPath([]);
     setPendingInteraction(null);
     let dx = 0;
@@ -9847,6 +9905,46 @@ export default function GameCanvas({
 
   const handleGamepadAction = () => {
     soundEngine.unlockAudio();
+    if (introStep !== -1) {
+      androidBridge.hapticDialogue();
+      advanceIntro();
+      return;
+    }
+    if (isDay2Intro) {
+      androidBridge.hapticDialogue();
+      advanceDay2Intro();
+      return;
+    }
+    if (isDay3Intro) {
+      androidBridge.hapticDialogue();
+      advanceDay3Intro();
+      return;
+    }
+    if (isDay4Intro) {
+      androidBridge.hapticDialogue();
+      advanceDay4Intro();
+      return;
+    }
+    if (isDay5Intro) {
+      androidBridge.hapticDialogue();
+      advanceDay5Intro();
+      return;
+    }
+    if (isDay6Intro) {
+      androidBridge.hapticDialogue();
+      advanceDay6Intro();
+      return;
+    }
+    if (isDay7Intro) {
+      androidBridge.hapticDialogue();
+      advanceDay7Intro();
+      return;
+    }
+    if (isDay8Intro) {
+      androidBridge.hapticDialogue();
+      advanceDay8Intro();
+      return;
+    }
     performInteraction();
   };
 
@@ -11674,6 +11772,15 @@ export default function GameCanvas({
     if (!canvasRef.current) return;
     soundEngine.unlockAudio();
 
+    if (e && e.stopPropagation) {
+      e.stopPropagation();
+    }
+    const now = Date.now();
+    if (now - lastTapHandledTimeRef.current < 200) {
+      return;
+    }
+    lastTapHandledTimeRef.current = now;
+
     // Handle intro screen advances on mobile tap
     if (introStep !== -1) {
       androidBridge.hapticDialogue();
@@ -11700,9 +11807,23 @@ export default function GameCanvas({
       advanceDay5Intro();
       return;
     }
+    if (isDay6Intro) {
+      androidBridge.hapticDialogue();
+      advanceDay6Intro();
+      return;
+    }
+    if (isDay7Intro) {
+      androidBridge.hapticDialogue();
+      advanceDay7Intro();
+      return;
+    }
+    if (isDay8Intro) {
+      androidBridge.hapticDialogue();
+      advanceDay8Intro();
+      return;
+    }
 
     // Double-tap on canvas to toggle turbo run
-    const now = Date.now();
     if (lastTapTimeRef.current && now - lastTapTimeRef.current < 320) {
       setIsSprinting((prev) => !prev);
       androidBridge.hapticAction();
@@ -11716,8 +11837,12 @@ export default function GameCanvas({
     const clickX = (e.clientX - rect.left) * scaleX;
     const clickY = (e.clientY - rect.top) * scaleY;
 
-    const col = Math.floor(clickX / TILE_SIZE);
-    const row = Math.floor(clickY / TILE_SIZE);
+    // Camera offset compensation for accurate world coordinates
+    const worldX = clickX + (currentCameraRef.current?.x || 0);
+    const worldY = clickY + (currentCameraRef.current?.y || 0);
+
+    const col = Math.floor(worldX / TILE_SIZE);
+    const row = Math.floor(worldY / TILE_SIZE);
 
     const grid = getGrid(currentMap);
     if (row < 0 || row >= grid.length || col < 0 || col >= grid[0].length) return;
@@ -11916,41 +12041,30 @@ export default function GameCanvas({
   };
 
   return (
-    <div className="flex flex-col items-center bg-slate-950 p-3 rounded-2xl border border-slate-800 shadow-2xl max-w-full w-full">
+    <div className="flex flex-col items-center bg-black w-full h-full flex-1 overflow-hidden select-none relative">
       
-      {/* Top Banner Status Bar */}
-      <div className="flex items-center justify-between w-full mb-3 px-2">
-        <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-pink-500 animate-pulse" />
-          <span className="text-xs font-mono uppercase tracking-widest text-slate-300 font-bold">
-            {currentMap === "bedroom" && (language === "es" ? "Habitación CKY" : "CKY Bedroom")}
-            {currentMap === "moms_room" && (language === "es" ? "Habitación de Mamá" : "Mom's Bedroom")}
-            {currentMap === "bathroom" && (language === "es" ? "Baño" : "Bathroom")}
-            {currentMap === "hallway" && (language === "es" ? "Pasillo" : "Hallway")}
-            {currentMap === "house" && (language === "es" ? "Casa de CKY" : "CKY House")}
-            {currentMap === "street" && (language === "es" ? "Calle de la Ciudad" : "City Street")}
-            {currentMap === "bus_interior" && (language === "es" ? "Colectivo Escolar (Interior)" : "School Bus (Interior)")}
-            {currentMap === "limbo" && (language === "es" ? "El Limbo (Espíritus)" : "The Limbo")}
-          </span>
-        </div>
-
-        {/* Story progress badge */}
-        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-900 border border-slate-800 rounded-md text-[10px] font-mono text-cyan-400">
-          <Sparkles className="w-3 h-3 text-cyan-400 animate-spin-slow" />
-          <span>
-            {language === "es" ? "Fase 1: Cap 1" : "Phase 1: Cap 1"}
-          </span>
-        </div>
-      </div>
-
       {/* Screen Frame Container with responsive scale wrapper */}
-      <div className="relative border-4 border-slate-800 bg-black rounded-2xl overflow-hidden shadow-2xl w-full max-w-3xl aspect-[4/3] sm:h-[460px] touch-none select-none overscroll-none">
+      <div 
+        ref={containerRef}
+        onClick={handleCanvasClick}
+        onPointerDown={(e) => {
+          if (e.pointerType === "touch" || e.pointerType === "pen") {
+            handleCanvasClick(e as unknown as React.MouseEvent<HTMLCanvasElement>);
+          }
+        }}
+        className="relative flex-1 w-full h-full overflow-hidden bg-black touch-none select-none flex items-center justify-center cursor-pointer overscroll-none"
+      >
         <canvas
           ref={canvasRef}
-          width={400}
-          height={320}
+          width={canvasDimensions.width}
+          height={canvasDimensions.height}
           onClick={handleCanvasClick}
-          className="w-full h-full block image-render-pixelated cursor-pointer bg-black touch-none select-none"
+          onPointerDown={(e) => {
+            if (e.pointerType === "touch" || e.pointerType === "pen") {
+              handleCanvasClick(e as unknown as React.MouseEvent<HTMLCanvasElement>);
+            }
+          }}
+          className="w-full h-full block object-cover image-render-pixelated cursor-pointer bg-black touch-none select-none"
         />
 
         {/* HUD Clock & Map Badge - Top Left */}
@@ -11971,6 +12085,23 @@ export default function GameCanvas({
           >
             <span>💵</span>
             <span>${(propStats?.money ?? 500).toLocaleString()}</span>
+          </div>
+
+          {/* Location Badge */}
+          <div 
+            className="border px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold shadow-lg flex items-center gap-1 bg-slate-950/85 border-pink-500/50 text-pink-300 hidden sm:flex"
+          >
+            <MapPin className="w-3 h-3 text-pink-400" />
+            <span>
+              {currentMap === "bedroom" && (language === "es" ? "Habitación" : "Bedroom")}
+              {currentMap === "moms_room" && (language === "es" ? "Hab. Mamá" : "Mom's Room")}
+              {currentMap === "bathroom" && (language === "es" ? "Baño" : "Bathroom")}
+              {currentMap === "hallway" && (language === "es" ? "Pasillo" : "Hallway")}
+              {currentMap === "house" && (language === "es" ? "Casa" : "House")}
+              {currentMap === "street" && (language === "es" ? "Calle" : "Street")}
+              {currentMap === "bus_interior" && (language === "es" ? "Colectivo" : "Bus")}
+              {currentMap === "limbo" && (language === "es" ? "El Limbo" : "The Limbo")}
+            </span>
           </div>
 
           {/* Active Buffs Badges */}
@@ -15056,7 +15187,7 @@ export default function GameCanvas({
       )}
 
       {/* Virtual Gamepad for Android & Touch Screens */}
-      {gameState === "playing" && introStep === -1 && !isDay2Intro && !isDay3Intro && !isDay4Intro && !isDay5Intro && activeDay8Battle === null && !showDay8NeighborClimaxModal && !showDay8AlanisModal && !showDay8EndingModal && !showSoccerMinigame && !showSandwichMinigame && !showTriviaMinigame && !showClawMachine && !showBicycleRace && !showStreetFoodCart && !showNoticeBoard && !showRoomCustomization && !showPetModal && (
+      {gameState === "playing" && activeDay8Battle === null && !showDay8NeighborClimaxModal && !showDay8AlanisModal && !showDay8EndingModal && !showSoccerMinigame && !showSandwichMinigame && !showTriviaMinigame && !showClawMachine && !showBicycleRace && !showStreetFoodCart && !showNoticeBoard && !showRoomCustomization && !showPetModal && (
         <VirtualGamepad
           onMove={handleGamepadMove}
           onAction={handleGamepadAction}
