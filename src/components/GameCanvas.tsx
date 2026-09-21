@@ -75,7 +75,7 @@ import {
   X,
   Smartphone,
   Users,
-  Map,
+  Map as MapIcon,
   Sliders,
   Maximize2,
   Minimize2
@@ -2050,6 +2050,7 @@ export default function GameCanvas({
   // Android Mobile Mobility: Turbo Sprint & Double-tap Run
   const [isSprinting, setIsSprinting] = useState<boolean>(false);
   const lastTapTimeRef = useRef<number>(0);
+  const lastTapPosRef = useRef<{ x: number; y: number } | null>(null);
 
   // Walking trigger after picking up books
   const lastPosRef = useRef<Position>(playerPos);
@@ -9223,7 +9224,7 @@ export default function GameCanvas({
       if (tileVal === 34 || tileVal === 2) return { type: "bathroom_exit_door", tx, ty };
     }
     if (currentMap === "street") {
-      if (isBusWaitingAtDoor && tx >= 2 && tx <= 6 && ty >= 6 && ty <= 8) return { type: "school_bus", tx, ty };
+      if ((isBusWaitingAtDoor || isGreenBusWaiting) && tx >= 10 && tx <= 16 && ty >= 6 && ty <= 8) return { type: "school_bus", tx, ty };
       if (tileVal === 65) return { type: "bus_stop_line_4", tx, ty };
       if (tileVal === 62) return { type: "street_lamp", tx, ty };
       if (tileVal === 63) return { type: "street_tree", tx, ty };
@@ -9231,6 +9232,8 @@ export default function GameCanvas({
       if (tileVal === 3) return { type: "house_front_door", tx, ty };
       if (tileVal === 31) return { type: "neighbor_door_1", tx, ty };
       if (tileVal === 32) return { type: "neighbor_door_2", tx, ty };
+      if (tileVal === 5) return { type: "limbo_portal", tx, ty };
+      if (tileVal === 66 || (tx === 2 && ty === 6)) return { type: "street_bicycle", tx, ty };
     }
     if (currentMap === "cemetery") {
       if (tileVal === 65) return { type: "bus_stop_line_4", tx, ty };
@@ -9305,10 +9308,10 @@ export default function GameCanvas({
       if (tileVal === 185) return { type: "terminal_exit", tx, ty };
     }
     // 10 Features Action Targets
-    if (currentMap === "street" && ((tx >= 1 && tx <= 4 && ty >= 4 && ty <= 6) || tileVal === 66)) {
+    if (tileVal === 66 || (currentMap === "street" && tx === 2 && ty === 6)) {
       return { type: "street_bicycle", tx, ty };
     }
-    if ((currentMap === "plaza_principal" || currentMap === "street" || currentMap === "bus_terminal") && (tileVal === 131 || (tx >= 2 && tx <= 4 && ty >= 3 && ty <= 5))) {
+    if ((currentMap === "plaza_principal" || currentMap === "bus_terminal") && tileVal === 131) {
       return { type: "street_food_cart", tx, ty };
     }
     if (currentMap === "shopping_mall" && ((tx >= 14 && tx <= 16 && ty >= 6 && ty <= 8) || tileVal === 126)) {
@@ -9317,10 +9320,10 @@ export default function GameCanvas({
     if (currentMap === "plaza_principal" && ((tx >= 11 && tx <= 14 && ty >= 2 && ty <= 4) || tileVal === 102)) {
       return { type: "plaza_notice_board", tx, ty };
     }
-    if ((currentMap === "empty_room" || currentMap === "house") && ((tx >= 6 && tx <= 8 && ty >= 5 && ty <= 7) || tileVal === 21)) {
+    if (currentMap === "empty_room" && tx === 1 && ty === 5) {
       return { type: "pet_bed", tx, ty };
     }
-    if (currentMap === "bedroom" && (tx >= 4 && tx <= 7 && ty <= 2)) {
+    if (currentMap === "bedroom" && tx === 8 && ty === 0) {
       return { type: "room_decor", tx, ty };
     }
     return null;
@@ -9617,6 +9620,25 @@ export default function GameCanvas({
     return false;
   };
 
+  const checkCanExitHouse = (): { allowed: boolean; tip?: string } => {
+    // CKY can ALWAYS exit to the street even without wearing the uniform
+    if (currentDay === 1 && currentOutfit !== "uniform") {
+      return {
+        allowed: true,
+        tip: language === "es"
+          ? "💡 Consejo: No llevas puesto el uniforme escolar, pero puedes salir a la calle a recorrer el barrio cuando quieras."
+          : "💡 Tip: You are not wearing the school uniform, but you can explore the street whenever you want."
+      };
+    }
+    return { allowed: true };
+  };
+
+  const handleExitToStreet = () => {
+    // CKY can go out to the street freely anytime, even without the uniform
+    setUniformErrorMsg(null);
+    setShowExitHouseChoiceModal(true);
+  };
+
   // Actual player motion logic with collision grid checks
   const movePlayer = (dx: number, dy: number, nextFace: Direction) => {
     const nextX = playerPos.x + dx;
@@ -9635,6 +9657,10 @@ export default function GameCanvas({
       }
     } else if (currentMap === "hallway") {
       if (tile !== 0 && tile !== 17 && tile !== 18 && tile !== 19 && tile !== 3) {
+        isSolid = true;
+      }
+    } else if (currentMap === "moms_room") {
+      if (tile !== 0 && tile !== 2) {
         isSolid = true;
       }
     } else if (currentMap === "empty_room") {
@@ -9788,11 +9814,9 @@ export default function GameCanvas({
     } else if (tile === 18 && currentMap === "hallway") {
       transitionToMap("empty_room", { x: 8, y: 3 });
     } else if (tile === 19 && currentMap === "hallway") {
-      onTriggerDialogue(
-        "Habitación de Mamá",
-        "Puerta a la habitación de la madre. 'Mamá está en la cocina preparando el desayuno', piensas.",
-        "Mom's room. 'She's in the kitchen', you think."
-      );
+      transitionToMap("moms_room", { x: 5, y: 6 });
+    } else if (tile === 2 && currentMap === "moms_room") {
+      transitionToMap("hallway", { x: 5, y: 3 });
     } else if (tile === 26 && currentMap === "empty_room") {
       // Puerta al pasillo en (9, 3)
       transitionToMap("hallway", { x: 1, y: 2 });
@@ -9822,7 +9846,7 @@ export default function GameCanvas({
         if (currentOutfit !== "casual") {
           onTriggerDialogue(
             "CKY",
-            "Tengo que ponerme ropa casual cómoda en el ropero de mi habitación antes de salir a la calle a pelear.",
+            "Tengo que ponerme ropa casual cómoda en el ropero de mi habitación antes de salir a la clase a pelear.",
             "I must put on comfortable casual clothes in my bedroom wardrobe before heading out to fight."
           );
         } else {
@@ -9834,8 +9858,7 @@ export default function GameCanvas({
           }
         }
       } else {
-        setUniformErrorMsg(null);
-        setShowExitHouseChoiceModal(true);
+        handleExitToStreet();
       }
     } else if (tile === 3 && currentMap === "street") {
       transitionToMap("empty_room", { x: 4, y: 1 });
@@ -10855,6 +10878,252 @@ export default function GameCanvas({
     if (target.type === "mueble_utiles_2") { setShowOrganizerModal2(true); return; }
     if (target.type === "bedside_table") { setShowNightstandModal(true); return; }
     if (target.type === "chair_with_clothes") { setShowJacketModal(true); return; }
+    if (target.type === "window") {
+      const nextOpen = !curtainsOpen;
+      setCurtainsOpen(nextOpen);
+      playSound(nextOpen ? 520 : 380, "triangle", 0.3);
+      advanceTime(2);
+      onTriggerDialogue(
+        "Ventana de tu Habitación",
+        nextOpen
+          ? "Abriste las cortinas de tu habitación. ¡La brisa fresca y la hermosa luz del sol entran por la ventana! (+2 min)"
+          : "Cerraste las cortinas de tu habitación resguardando la intimidad de tu cuarto.",
+        nextOpen
+          ? "You opened your room's curtains. Fresh morning breeze streams inside! (+2 min)"
+          : "You closed your room's curtains."
+      );
+      return;
+    }
+    if (target.type === "mirror") {
+      playSound(620, "sine", 0.3);
+      advanceTime(2);
+      const outfitLabel =
+        currentOutfit === "uniform" ? (language === "es" ? "Uniforme escolar" : "School uniform")
+        : currentOutfit === "pajamas" ? (language === "es" ? "Piyama de seda fina" : "Silk pajamas")
+        : currentOutfit === "sport" ? (language === "es" ? "Ropa deportiva" : "Sportswear")
+        : currentOutfit === "gala" ? (language === "es" ? "Vestido de gala" : "Gala dress")
+        : currentOutfit === "lingerie_sexy" ? (language === "es" ? "Lencería sexy roja de encaje" : "Sexy red lace lingerie")
+        : (language === "es" ? "Ropa casual" : "Casual clothes");
+
+      onTriggerDialogue(
+        "Espejo de la Habitación",
+        `Te miras en el espejo de tu habitación. Te acomodas el pelo y chequeas tu aspecto. Llevas puesto: ${outfitLabel}. CKY sonríe satisfecha: '¡Qué estilazo!' (+5 XP, +5% Perfume).`,
+        `You look at yourself in the mirror, styling your hair. Outfit: ${outfitLabel}. CKY smiles: 'Looking sharp!' (+5 XP, +5% Perfume).`,
+        () => {
+          addXP(5);
+          setStats(prev => ({ ...prev, perfume: Math.min(100, (prev.perfume ?? 0) + 5) }));
+        }
+      );
+      return;
+    }
+    if (target.type === "street_door") {
+      handleExitToStreet();
+      return;
+    }
+    if (target.type === "living_window") {
+      setShowLivingWindowModal(true);
+      return;
+    }
+    if (target.type === "living_fireplace") {
+      setShowFireplaceModal(true);
+      return;
+    }
+    if (target.type === "living_table") {
+      playSound(420, "sine", 0.3);
+      advanceTime(5);
+      setStats(prev => ({ ...prev, energy: Math.min(100, (prev.energy ?? 0) + 10) }));
+      onTriggerDialogue(
+        "Mesa del Living",
+        "Te sientas un momento en la mesa del living a descansar los pies y organizar tus pensamientos (+10 Energía, +5 min).",
+        "You sit at the living room table to rest your feet and clear your thoughts (+10 Energy, +5 min)."
+      );
+      return;
+    }
+    if (target.type === "living_bookshelf") {
+      playSound(520, "sine", 0.3);
+      advanceTime(5);
+      addXP(10);
+      onTriggerDialogue(
+        "Biblioteca del Living",
+        "Revisas los libros de la familia: novelas clásicas, enciclopedias y álbumes familiares antiguos (+10 XP, +5 min).",
+        "You browse the family bookshelf: classic novels, encyclopedias and old photo albums (+10 XP, +5 min)."
+      );
+      return;
+    }
+    if (target.type === "living_cabinet") {
+      playSound(380, "sine", 0.3);
+      advanceTime(2);
+      onTriggerDialogue(
+        "Aparador del Living",
+        "Un elegante aparador de madera con vajilla fina para ocasiones especiales y adornos de cristal bien cuidados.",
+        "An elegant wooden cabinet with fine china for special occasions and crystal decor."
+      );
+      return;
+    }
+    if (target.type === "living_hallway_door") {
+      transitionToMap("hallway", { x: 1, y: 2 });
+      return;
+    }
+    if (target.type === "sisters_room_door") {
+      transitionToMap("sisters_room", { x: 3, y: 1 });
+      return;
+    }
+    if (target.type === "bathroom_door") {
+      transitionToMap("bathroom", { x: 3, y: 1 });
+      return;
+    }
+    if (target.type === "sisters_room_exit_door") {
+      transitionToMap("empty_room", { x: 1, y: 6 });
+      return;
+    }
+    if (target.type === "bathroom_exit_door") {
+      handleBathroomExit();
+      return;
+    }
+    if (target.type === "cky_room_door") {
+      transitionToMap("bedroom", { x: 2, y: 6 });
+      return;
+    }
+    if (target.type === "living_room_door") {
+      transitionToMap("empty_room", { x: 8, y: 3 });
+      return;
+    }
+    if (target.type === "kitchen_door") {
+      transitionToMap("house", { x: 1, y: 3 });
+      return;
+    }
+    if (target.type === "hallway_door") {
+      if (checkMomFirstDayPhotoEvent()) {
+        setPlayerPos(playerPos);
+      } else {
+        transitionToMap("hallway", { x: 8, y: 2 });
+      }
+      return;
+    }
+    if (target.type === "moms_room_door") {
+      transitionToMap("moms_room", { x: 5, y: 6 });
+      return;
+    }
+    if (target.type === "moms_room_exit_door") {
+      transitionToMap("hallway", { x: 5, y: 3 });
+      return;
+    }
+    if (target.type === "moms_bed") {
+      playSound(350, "sine", 0.3);
+      advanceTime(2);
+      onTriggerDialogue(
+        "Cama de Mamá",
+        "La cama de mamá está prolijamente tendida con su acolchado floreado favorito. Se nota su orden característico.",
+        "Mom's bed is neatly made with her favorite floral quilt."
+      );
+      return;
+    }
+    if (target.type === "moms_table") {
+      playSound(400, "sine", 0.3);
+      advanceTime(2);
+      onTriggerDialogue(
+        "Mesa de Luz de Mamá",
+        "En la mesa de luz hay una lámpara de lectura, un vaso de agua y una foto enmarcada de la familia cuando CKY era chiquita.",
+        "On the nightstand is a reading lamp, a glass of water, and a framed family photo from when CKY was little."
+      );
+      return;
+    }
+    if (target.type === "moms_window") {
+      playSound(450, "triangle", 0.3);
+      advanceTime(2);
+      onTriggerDialogue(
+        "Ventana de la Habitación de Mamá",
+        "Una ventana con cortinas bordadas que da hacia el jardín trasero y los limoneros.",
+        "A window with embroidered curtains overlooking the back garden and lemon trees."
+      );
+      return;
+    }
+    if (target.type === "moms_closet") {
+      playSound(380, "sine", 0.3);
+      advanceTime(3);
+      onTriggerDialogue(
+        "Placard de Mamá",
+        "El placard de mamá. Hay tapados de invierno, vestidos formales y ropa de trabajo impecablemente planchada.",
+        "Mom's wardrobe with winter coats, formal dresses, and neatly ironed work clothes."
+      );
+      return;
+    }
+    if (target.type === "moms_chair") {
+      playSound(350, "sine", 0.3);
+      advanceTime(5);
+      setStats(prev => ({ ...prev, energy: Math.min(100, (prev.energy ?? 0) + 5) }));
+      onTriggerDialogue(
+        "Sillón de Mamá",
+        "Un sillón tapizado muy cómodo donde mamá suele tejer o leer a la noche (+5 Energía, +5 min).",
+        "A cozy upholstered armchair where mom knits or reads at night (+5 Energy, +5 min)."
+      );
+      return;
+    }
+    if (target.type === "sisters_bed") {
+      playSound(350, "sine", 0.3);
+      advanceTime(2);
+      onTriggerDialogue(
+        "Cama de la Hermana",
+        "La cama de tu hermana con almohadas de colores pastel y un peluche gigante de oso.",
+        "Your sister's bed with pastel pillows and a giant plush bear."
+      );
+      return;
+    }
+    if (target.type === "sisters_desk") {
+      playSound(420, "sine", 0.3);
+      advanceTime(3);
+      onTriggerDialogue(
+        "Escritorio de la Hermana",
+        "Lleno de marcadores fluorescentes, stickers y apuntes de la universidad prolijamente ordenados.",
+        "Filled with pastel markers, stickers, and neat college notes."
+      );
+      return;
+    }
+    if (target.type === "sisters_closet") {
+      playSound(380, "sine", 0.3);
+      advanceTime(2);
+      onTriggerDialogue(
+        "Ropero de la Hermana",
+        "Ropero repleto de camperas, bufandas tejidas y zapatos acomodados en cajas.",
+        "Wardrobe packed with jackets, knitted scarves, and shoes in shoe-boxes."
+      );
+      return;
+    }
+    if (target.type === "sisters_bookshelf") {
+      playSound(450, "sine", 0.3);
+      advanceTime(3);
+      addXP(5);
+      onTriggerDialogue(
+        "Estantería de la Hermana",
+        "Colección de mangas, novelas juveniles y figuras de colección en perfecto estado (+5 XP).",
+        "Collection of manga, YA novels, and collectible figurines in pristine shape (+5 XP)."
+      );
+      return;
+    }
+    if (target.type === "sisters_window") {
+      playSound(400, "triangle", 0.3);
+      advanceTime(2);
+      onTriggerDialogue(
+        "Ventana de la Hermana",
+        "Ventana luminosa con vista lateral hacia la entrada y el pasaje del barrio.",
+        "Bright window overlooking the neighborhood entrance pathway."
+      );
+      return;
+    }
+    if (target.type === "towel_rack") {
+      setShowTowelModal(true);
+      return;
+    }
+    if (target.type === "laundry_hamper") {
+      playSound(320, "sine", 0.3);
+      advanceTime(2);
+      onTriggerDialogue(
+        "Cesto de Ropa Sucia",
+        "Cesto de mimbre para la ropa sucia. Mamá se encarga de poner el lavarropas los fines de semana.",
+        "Wicker basket for laundry. Mom takes care of the wash on weekends."
+      );
+      return;
+    }
     if (target.type === "moms_vanity") {
       if (!hasTakenMomsPerfume) {
         setHasTakenMomsPerfume(true);
@@ -11684,6 +11953,331 @@ export default function GameCanvas({
       }
       return;
     }
+
+    // Street Interactions
+    if (target.type === "house_front_door") {
+      soundEngine.playSfx("door");
+      transitionToMap("empty_room", { x: 4, y: 1 });
+      onTriggerDialogue(
+        "Regreso a Casa",
+        "Regresaste al living de tu casa. El calor de hogar te reconforta.",
+        "You returned to the living room of your house."
+      );
+      return;
+    }
+
+    if (target.type === "street_trash_can") {
+      soundEngine.playSfx("interact");
+      advanceTime(2);
+      if (!hasSearchedStreetTrash) {
+        setHasSearchedStreetTrash(true);
+        addInventoryItem({
+          id: "street_trash_bill_100",
+          nameEs: "Billete de $100 Arrugado",
+          nameEn: "Crumpled $100 Bill",
+          descEs: "Un billete de $100 que alguien perdió dentro del cesto de la esquina.",
+          descEn: "A crumpled $100 bill found in the corner trash bin.",
+          icon: "💵",
+          isKey: false,
+          category: "pockets"
+        });
+        addXP(10);
+        playSound(440, "sine", 0.4);
+        onTriggerDialogue(
+          "Cesto de Basura Municipal",
+          "¡Revisaste el cesto de la esquina! Encontraste un billete arrugado de $100 que alguien perdió (+10 XP, +$100 guardado en bolsillos).",
+          "You searched the street trash bin! Found a crumpled $100 bill (+10 XP, +$100 saved in pockets)."
+        );
+      } else {
+        onTriggerDialogue(
+          "Cesto de Basura Municipal",
+          "El cesto ya fue revisado hoy. Solo quedan volantes viejos y envoltorios vacíos.",
+          "The trash bin was already checked today. Only old flyers left."
+        );
+      }
+      return;
+    }
+
+    if (target.type === "street_tree") {
+      soundEngine.playSfx("interact");
+      advanceTime(2);
+      playSound(360, "triangle", 0.3);
+      onTriggerDialogue(
+        "Árbol de la Vereda",
+        "Un frondoso fresno de vereda. La brisa agita sus hojas verdes y se escucha el canto de los pájaros (+2 min).",
+        "A leafy sidewalk ash tree. The morning breeze rustles its leaves."
+      );
+      return;
+    }
+
+    if (target.type === "street_lamp") {
+      soundEngine.playSfx("interact");
+      advanceTime(1);
+      playSound(520, "sine", 0.2);
+      onTriggerDialogue(
+        "Farola de Alumbrado Público",
+        "Una farola municipal de hierro forjado. Ilumina la vereda durante la noche con su luz cálida (+1 min).",
+        "A wrought iron municipal streetlight. Lights up the street at night."
+      );
+      return;
+    }
+
+    if (target.type === "neighbor_door_1") {
+      soundEngine.playSfx("door");
+      advanceTime(2);
+      onTriggerDialogue(
+        "Casa de la Vecina Paula",
+        "Golpeás la puerta de la vecina Paula... pero nadie atiende. Se escucha una risa burlona y un susurro gélido desde adentro... Mejor no meterse sin estar preparada.",
+        "You knock on neighbor Paula's door... but nobody answers. A mocking laugh whispers from within."
+      );
+      return;
+    }
+
+    if (target.type === "neighbor_door_2") {
+      soundEngine.playSfx("door");
+      advanceTime(2);
+      if (currentDay === 6 && day6KissLessonDone) {
+        transitionToMap("soulmate_house", { x: 4, y: 6 });
+      } else if (currentDay === 6 && day6AlanisBedroomArgumentDone) {
+        onTriggerDialogue(
+          "CKY",
+          "Es la casa de mi alma gemela... pero todavía estoy alterada por la discusión con Alanis, despeinada y sin preparar. ¡Necesito dormir la siesta, ducharme y alistarme primero!",
+          "It's my soulmate's house... but I need a shower and to get ready first!"
+        );
+      } else if (currentDay === 7 && day7LingeriePacked) {
+        transitionToMap("soulmate_house", { x: 4, y: 6 });
+      } else if (currentDay >= 6) {
+        transitionToMap("soulmate_house", { x: 4, y: 6 });
+      } else {
+        onTriggerDialogue(
+          "Casa Vecina",
+          "Es una casa vecina del barrio. Las persianas están bajas y no hay nadie en la entrada.",
+          "A neighborhood house. Shutters are closed."
+        );
+      }
+      return;
+    }
+
+    if (target.type === "bus_stop_line_4" || target.type === "school_bus") {
+      soundEngine.playSfx("interact");
+      if (currentDay === 1 && !hasNeighborBoardedBus) {
+        triggerSchoolBusSequence();
+      } else {
+        setShowBusStopModal(true);
+      }
+      return;
+    }
+
+    if (target.type === "limbo_portal") {
+      soundEngine.playSfx("portal");
+      onTriggerDialogue(
+        "Grieta Dimensional del Limbo",
+        "Una extraña grieta interdimensional violeta que vibra con energía oscura sobre el asfalto. Al acercarte sientes la atracción cósmica...",
+        "A supernatural rift flickers on the asphalt. You are drawn toward the other dimension...",
+        () => {
+          transitionToMap("limbo", { x: 2, y: 2 });
+        }
+      );
+      return;
+    }
+
+    // Cemetery Interactions
+    if (target.type === "angela_pink_tomb") {
+      soundEngine.playSfx("interact");
+      advanceTime(5);
+      addXP(20);
+      playSound(520, "sine", 0.4);
+      onTriggerDialogue(
+        "Tumba de Ángela (Flores y Lazos Rosas)",
+        "La tumba de Ángela está adornada con flores frescas y lazos rosas. Se siente una presencia cálida y protectora a tu lado (+20 XP).",
+        "Angela's tomb is decorated with fresh flowers and pink ribbons. A warm protective presence surrounds you (+20 XP)."
+      );
+      return;
+    }
+    if (target.type === "generic_tomb") {
+      soundEngine.playSfx("interact");
+      advanceTime(2);
+      playSound(260, "triangle", 0.3);
+      onTriggerDialogue(
+        "Sepulcro Antiguo de Piedra",
+        "Un antiguo sepulcro de piedra tallada cubierto de musgo. Las inscripciones datan de principios del siglo pasado (+2 min).",
+        "An ancient carved stone sepulcher covered with moss (+2 min)."
+      );
+      return;
+    }
+    if (target.type === "angel_statue") {
+      soundEngine.playSfx("interact");
+      advanceTime(3);
+      playSound(600, "sine", 0.3);
+      onTriggerDialogue(
+        "Estatua de Ángel Guardián",
+        "Una imponente escultura de mármol blanco de un ángel con las alas abiertas al cielo, guardando el descanso eterno (+3 min).",
+        "An imposing white marble statue of an angel guarding eternal rest."
+      );
+      return;
+    }
+    if (target.type === "cypress_tree") {
+      soundEngine.playSfx("interact");
+      advanceTime(2);
+      playSound(320, "triangle", 0.3);
+      onTriggerDialogue(
+        "Ciprés Centenario del Cementerio",
+        "Un árbol ciprés esbelto que se eleva solemne hacia el cielo. El viento susurra suavemente entre sus ramas (+2 min).",
+        "A solemn cemetery cypress tree pointing toward the sky (+2 min)."
+      );
+      return;
+    }
+    if (target.type === "mausoleum") {
+      soundEngine.playSfx("door");
+      advanceTime(3);
+      playSound(200, "sawtooth", 0.3);
+      onTriggerDialogue(
+        "Mausoleo Familiar",
+        "Un solemne panteón familiar con rejas de hierro forjado y vitrales oscuros que filtran una tenue luz mística (+3 min).",
+        "A solemn granite family mausoleum with wrought iron gates (+3 min)."
+      );
+      return;
+    }
+
+    // Bus Interior Interactions
+    if (target.type === "bus_driver_seat") {
+      soundEngine.playSfx("dialogue");
+      onTriggerDialogue(
+        "Chofer Don Carlos",
+        "¡Hola CKY! 'No distraigas al chofer mientras el bondi está en marcha. Agarrate del pasamanos o sentate en un asiento libre.'",
+        "Driver Don Carlos: 'Hey CKY! Don't distract the driver while the bus is moving. Grab a seat or hold tight!'"
+      );
+      return;
+    }
+    if (target.type.startsWith("bus_seat_")) {
+      soundEngine.playSfx("interact");
+      advanceTime(5);
+      playSound(440, "sine", 0.3);
+      onTriggerDialogue(
+        "Asiento del Colectivo Línea 4",
+        "Te sentás cómodamente junto a la ventanilla mirando las calles pasar (+5 min, +10% Energía).",
+        "You sit comfortably by the window watching the streets pass (+5 min, +10% Energy)."
+      );
+      return;
+    }
+    if (target.type === "bus_exit_door") {
+      soundEngine.playSfx("door");
+      setShowBusStopModal(true);
+      return;
+    }
+
+    // School Objects Interactions
+    if (target.type === "school_desk") {
+      soundEngine.playSfx("interact");
+      advanceTime(5);
+      playSound(380, "triangle", 0.3);
+      onTriggerDialogue(
+        "Banco Escolar",
+        "Un pupitre de madera escolar con inscripciones, iniciales y recuerdos de alumnos (+5 min).",
+        "A wooden school desk carved with initials and memories (+5 min)."
+      );
+      return;
+    }
+    if (target.type === "director_desk") {
+      soundEngine.playSfx("interact");
+      advanceTime(3);
+      playSound(300, "triangle", 0.3);
+      onTriggerDialogue(
+        "Escritorio de Dirección",
+        "El escritorio del Director Don Héctor, repleto de expedientes, circulares del ministerio y sellos escolares.",
+        "Principal Don Hector's desk, stacked with files and official stamps."
+      );
+      return;
+    }
+    if (target.type === "director_bookshelf") {
+      soundEngine.playSfx("interact");
+      advanceTime(3);
+      playSound(340, "triangle", 0.3);
+      onTriggerDialogue(
+        "Biblioteca de Dirección",
+        "Tomos encuadernados de leyes educativas y libros históricos de actas escolares.",
+        "Bound volumes of education regulations and historical school logbooks."
+      );
+      return;
+    }
+    if (target.type === "teachers_table") {
+      soundEngine.playSfx("interact");
+      advanceTime(3);
+      playSound(400, "sine", 0.3);
+      onTriggerDialogue(
+        "Mesa de Sala de Profesores",
+        "Mesa de profesores con cuadernos de calificaciones, tazas de té y exámenes pendientes de corrección.",
+        "Teachers' lounge table with gradebooks, tea mugs, and exams to grade."
+      );
+      return;
+    }
+    if (target.type === "teachers_coffee") {
+      soundEngine.playSfx("interact");
+      advanceTime(5);
+      playSound(580, "sine", 0.4);
+      onTriggerDialogue(
+        "Cafetera de Profesores",
+        "Café caliente recién filtrado con aroma tostado. Te servís un sorbo energizante (+10% Energía, +5 min).",
+        "Freshly brewed hot coffee (+10% Energy, +5 min)."
+      );
+      return;
+    }
+    if (target.type === "school_lockers") {
+      soundEngine.playSfx("interact");
+      advanceTime(2);
+      playSound(460, "triangle", 0.3);
+      onTriggerDialogue(
+        "Casilleros Escolares",
+        "Fila de casilleros metálicos azules con candados y calcomanías (+2 min).",
+        "Row of blue metal school lockers with stickers and padlocks (+2 min)."
+      );
+      return;
+    }
+    if (target.type === "urinal") {
+      soundEngine.playSfx("interact");
+      advanceTime(2);
+      playSound(280, "triangle", 0.3);
+      onTriggerDialogue(
+        "Sanitarios Escolares",
+        "Instalaciones sanitarias de la escuela, higienizadas con lavandina (+2 min).",
+        "School restrooms, clean and disinfected (+2 min)."
+      );
+      return;
+    }
+    if (target.type === "courtyard_bench") {
+      soundEngine.playSfx("interact");
+      advanceTime(5);
+      playSound(420, "sine", 0.3);
+      onTriggerDialogue(
+        "Banco del Patio Escolar",
+        "Te sentás en el banco de madera bajo la sombra a descansar durante el recreo (+5% Energía, +5 min).",
+        "You rest on the courtyard bench under the shade (+5% Energy, +5 min)."
+      );
+      return;
+    }
+
+    // Ruins Valley Objects
+    if (target.type === "ruins_rune_pillar" || target.type === "ruins_monolith" || target.type === "ruins_stone_arch") {
+      soundEngine.playSfx("interact");
+      advanceTime(2);
+      playSound(480, "sine", 0.3);
+      onTriggerDialogue(
+        "Monolito Rúnico Ancestral",
+        "Un antiguo pilar de piedra esculpido con runas que emiten un tenue fulgor dorado al tocarlas (+2 min).",
+        "An ancient stone pillar carved with glowing golden runes (+2 min)."
+      );
+      return;
+    }
+    if (target.type === "ruins_exit_trail") {
+      soundEngine.playSfx("door");
+      transitionToMap("bedroom", { x: 4, y: 4 });
+      onTriggerDialogue(
+        "Sendero de Retorno",
+        "Regresaste a tu habitación tras la expedición al Valle de las Ruinas.",
+        "You returned to your bedroom from the ruins expedition."
+      );
+      return;
+    }
   };
 
   const isTileWalkable = (tile: number, map: string): boolean => {
@@ -11768,15 +12362,14 @@ export default function GameCanvas({
     return null;
   };
 
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleCanvasPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!canvasRef.current) return;
+    e.preventDefault();
+    e.stopPropagation();
     soundEngine.unlockAudio();
 
-    if (e && e.stopPropagation) {
-      e.stopPropagation();
-    }
     const now = Date.now();
-    if (now - lastTapHandledTimeRef.current < 200) {
+    if (now - lastTapHandledTimeRef.current < 100) {
       return;
     }
     lastTapHandledTimeRef.current = now;
@@ -11823,12 +12416,19 @@ export default function GameCanvas({
       return;
     }
 
-    // Double-tap on canvas to toggle turbo run
-    if (lastTapTimeRef.current && now - lastTapTimeRef.current < 320) {
+    // Double-tap on canvas to toggle turbo run (must be close in position and within 300ms)
+    const isDoubleTap = 
+      lastTapTimeRef.current && 
+      (now - lastTapTimeRef.current < 300) &&
+      lastTapPosRef.current &&
+      Math.hypot(e.clientX - lastTapPosRef.current.x, e.clientY - lastTapPosRef.current.y) < 25;
+
+    if (isDoubleTap) {
       setIsSprinting((prev) => !prev);
       androidBridge.hapticAction();
     }
     lastTapTimeRef.current = now;
+    lastTapPosRef.current = { x: e.clientX, y: e.clientY };
 
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
@@ -11888,7 +12488,7 @@ export default function GameCanvas({
           const currentPos = { ...playerPos };
           setTimeout(() => {
             performInteraction(currentPos, targetFace);
-          }, 80);
+          }, 60);
           return;
         }
 
@@ -11930,9 +12530,11 @@ export default function GameCanvas({
         const { face } = pendingInteraction;
         setFacing(face);
         setPendingInteraction(null);
+        const currentPos = { ...playerPos };
+        const currentFace = face;
         setTimeout(() => {
           androidBridge.hapticAction();
-          performInteraction();
+          performInteraction(currentPos, currentFace);
         }, 60);
       }
       return;
@@ -11948,7 +12550,7 @@ export default function GameCanvas({
     else if (dy > 0) nextFace = "down";
     else if (dy < 0) nextFace = "up";
 
-    const stepDelay = isSprinting ? 95 : 160;
+    const stepDelay = isSprinting ? 90 : 155;
     const timer = window.setTimeout(() => {
       setFacing(nextFace);
       movePlayer(dx, dy, nextFace);
@@ -11956,7 +12558,7 @@ export default function GameCanvas({
     }, stepDelay);
 
     return () => clearTimeout(timer);
-  }, [walkPath, playerPos, isSprinting, pendingInteraction, facing]);
+  }, [walkPath, playerPos, isSprinting, pendingInteraction]);
 
   // Switch level animation and state loader
   const transitionToMap = (mapId: typeof currentMap, newPos: Position) => {
@@ -12046,25 +12648,16 @@ export default function GameCanvas({
       {/* Screen Frame Container with responsive scale wrapper */}
       <div 
         ref={containerRef}
-        onClick={handleCanvasClick}
-        onPointerDown={(e) => {
-          if (e.pointerType === "touch" || e.pointerType === "pen") {
-            handleCanvasClick(e as unknown as React.MouseEvent<HTMLCanvasElement>);
-          }
-        }}
-        className="relative flex-1 w-full h-full overflow-hidden bg-black touch-none select-none flex items-center justify-center cursor-pointer overscroll-none"
+        className="relative flex-1 w-full h-full overflow-hidden bg-black touch-none select-none flex items-center justify-center overscroll-none"
+        style={{ touchAction: "none" }}
       >
         <canvas
           ref={canvasRef}
           width={canvasDimensions.width}
           height={canvasDimensions.height}
-          onClick={handleCanvasClick}
-          onPointerDown={(e) => {
-            if (e.pointerType === "touch" || e.pointerType === "pen") {
-              handleCanvasClick(e as unknown as React.MouseEvent<HTMLCanvasElement>);
-            }
-          }}
-          className="w-full h-full block object-cover image-render-pixelated cursor-pointer bg-black touch-none select-none"
+          onPointerDown={handleCanvasPointerDown}
+          className="w-full h-full block image-render-pixelated cursor-pointer bg-black touch-none select-none"
+          style={{ touchAction: "none" }}
         />
 
         {/* HUD Clock & Map Badge - Top Left */}
@@ -12185,7 +12778,7 @@ export default function GameCanvas({
             className="border p-2 rounded-xl active:scale-95 transition-all shadow-xl flex items-center justify-center bg-slate-900/90 border-slate-700 text-pink-400 hover:border-pink-400 hover:bg-slate-800 cursor-pointer"
             title={language === "es" ? "Mapa y Misiones [Tecla M]" : "Map & Quests [M]"}
           >
-            <Map className="w-4 h-4 text-pink-400" />
+            <MapIcon className="w-4 h-4 text-pink-400" />
           </button>
 
           {/* ⚡ Motor Gráfico HD Button [G] */}
@@ -14556,6 +15149,270 @@ export default function GameCanvas({
               className="mt-3 px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs font-mono rounded-lg"
             >
               Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Exit House to Street Choice Modal */}
+      {showExitHouseChoiceModal && (
+        <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-6 text-center animate-fade-in">
+          <div className="bg-slate-900 border-2 border-emerald-500/50 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4">
+            <div className="text-3xl">🚪</div>
+            <h3 className="text-lg font-bold font-display text-emerald-400 uppercase tracking-wide">
+              {language === "es" ? "Puerta Principal a la Calle" : "Front Door to the Street"}
+            </h3>
+            <p className="text-xs text-slate-300 font-mono leading-relaxed">
+              {language === "es"
+                ? "¿Deseas salir a la calle principal?"
+                : "Do you want to head out into the main street?"}
+            </p>
+
+            {currentDay === 1 && currentOutfit !== "uniform" && (
+              <div className="p-2.5 bg-sky-950/60 border border-sky-500/40 rounded-xl text-xs text-sky-200 font-mono text-left">
+                <p className="font-semibold text-sky-300 flex items-center gap-1.5 text-[11px]">
+                  <span>👕</span> {language === "es" ? "Vestimenta actual:" : "Current outfit:"}
+                </p>
+                <p className="text-[10px] text-sky-200/90 mt-0.5 leading-relaxed">
+                  {language === "es"
+                    ? "Sales sin el uniforme escolar puesto (puedes salir libremente a recorrer el barrio)."
+                    : "Heading out without school uniform (you can freely explore the neighborhood)."}
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-2.5 pt-2">
+              <button
+                onClick={() => {
+                  setShowExitHouseChoiceModal(false);
+                  transitionToMap("street", { x: 4, y: 4 });
+                  playSound(480, "triangle", 0.3);
+                  onTriggerDialogue(
+                    "Calle Principal",
+                    "Saliste a la calle principal de tu barrio. La brisa de la mañana te da la bienvenida.",
+                    "You stepped out onto the main street of your neighborhood."
+                  );
+                }}
+                className="w-full py-2.5 px-4 rounded-xl border font-mono text-xs text-left flex items-center justify-between transition-all border-emerald-500/40 bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-200 cursor-pointer shadow-lg active:scale-95"
+              >
+                <div className="flex items-center gap-2">
+                  <span>🚶‍♀️</span>
+                  <div>
+                    <p className="font-bold">{language === "es" ? "Salir a la calle" : "Go to the street"}</p>
+                    <p className="text-[10px] text-emerald-300/80">{language === "es" ? "Cruzar la puerta hacia el exterior" : "Step outside"}</p>
+                  </div>
+                </div>
+                <span className="text-emerald-400 font-bold">➔</span>
+              </button>
+            </div>
+
+            <button
+              onClick={() => setShowExitHouseChoiceModal(false)}
+              className="mt-3 px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs font-mono rounded-lg"
+            >
+              {language === "es" ? "Permanecer adentro" : "Stay inside"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bus Stop Line 4 Modal */}
+      {showBusStopModal && (
+        <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-6 text-center animate-fade-in">
+          <div className="bg-slate-900 border-2 border-emerald-500/50 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4">
+            <div className="text-3xl">🚏</div>
+            <h3 className="text-lg font-bold font-display text-emerald-400 uppercase tracking-wide">
+              {language === "es" ? "Parada de Colectivo - Línea 4" : "Bus Stop - Line 4"}
+            </h3>
+            <p className="text-xs text-slate-300 font-mono leading-relaxed">
+              {language === "es"
+                ? "El colectivo verde de la Línea 4 conecta los principales puntos de la ciudad. ¿Hacia dónde deseas viajar?"
+                : "The green Line 4 bus connects all major city spots. Where would you like to travel?"}
+            </p>
+
+            <div className="space-y-2 pt-1 max-h-64 overflow-y-auto pr-1">
+              {/* Option: Escuela Secundaria */}
+              <button
+                onClick={() => {
+                  setShowBusStopModal(false);
+                  advanceTime(15);
+                  transitionToMap("school_courtyard", { x: 3, y: 7 });
+                  playSound(480, "triangle", 0.3);
+                  onTriggerDialogue(
+                    "Colectivo Línea 4",
+                    "Viajaste en el colectivo verde hasta el patio de la Escuela Secundaria N° 4 (+15 min).",
+                    "You rode the green bus to the High School Courtyard (+15 min)."
+                  );
+                }}
+                className="w-full py-2 px-3 rounded-xl border font-mono text-xs text-left flex items-center justify-between border-sky-500/40 bg-sky-950/40 hover:bg-sky-900/60 text-sky-200 cursor-pointer shadow active:scale-95"
+              >
+                <div className="flex items-center gap-2">
+                  <span>🏫</span>
+                  <div>
+                    <p className="font-bold">{language === "es" ? "Escuela Secundaria N° 4" : "High School Courtyard"}</p>
+                    <p className="text-[10px] text-sky-300/80">{language === "es" ? "Patio escolar y aulas" : "Courtyard & classrooms"}</p>
+                  </div>
+                </div>
+                <span className="text-sky-400 font-bold">➔</span>
+              </button>
+
+              {/* Option: Cementerio */}
+              <button
+                onClick={() => {
+                  setShowBusStopModal(false);
+                  advanceTime(15);
+                  transitionToMap("cemetery", { x: 1, y: 8 });
+                  playSound(480, "triangle", 0.3);
+                  onTriggerDialogue(
+                    "Colectivo Línea 4",
+                    "Llegaste al Cementerio Municipal frente a la tumba de Ángela (+15 min).",
+                    "You arrived at the Municipal Cemetery near Angela's grave (+15 min)."
+                  );
+                }}
+                className="w-full py-2 px-3 rounded-xl border font-mono text-xs text-left flex items-center justify-between border-purple-500/40 bg-purple-950/40 hover:bg-purple-900/60 text-purple-200 cursor-pointer shadow active:scale-95"
+              >
+                <div className="flex items-center gap-2">
+                  <span>⚰️</span>
+                  <div>
+                    <p className="font-bold">{language === "es" ? "Cementerio Municipal" : "Municipal Cemetery"}</p>
+                    <p className="text-[10px] text-purple-300/80">{language === "es" ? "Lugar de descanso de Ángela" : "Angela's resting place"}</p>
+                  </div>
+                </div>
+                <span className="text-purple-400 font-bold">➔</span>
+              </button>
+
+              {/* Option: Interior del Colectivo */}
+              <button
+                onClick={() => {
+                  setShowBusStopModal(false);
+                  advanceTime(5);
+                  transitionToMap("bus_interior", { x: 1, y: 8 });
+                  playSound(480, "triangle", 0.3);
+                  onTriggerDialogue(
+                    "Interior del Colectivo Línea 4",
+                    "Subiste al colectivo verde por la puerta delantera. Hay asientos libres para viajar.",
+                    "You boarded the green bus through the front door."
+                  );
+                }}
+                className="w-full py-2 px-3 rounded-xl border font-mono text-xs text-left flex items-center justify-between border-emerald-500/40 bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-200 cursor-pointer shadow active:scale-95"
+              >
+                <div className="flex items-center gap-2">
+                  <span>🚌</span>
+                  <div>
+                    <p className="font-bold">{language === "es" ? "Subir al Colectivo (Interior)" : "Board Bus (Interior)"}</p>
+                    <p className="text-[10px] text-emerald-300/80">{language === "es" ? "Asientos, chofer y pasajeros" : "Seats, driver & passengers"}</p>
+                  </div>
+                </div>
+                <span className="text-emerald-400 font-bold">➔</span>
+              </button>
+
+              {/* Option: Calle de CKY (si no está en street) */}
+              {currentMap !== "street" && (
+                <button
+                  onClick={() => {
+                    setShowBusStopModal(false);
+                    advanceTime(10);
+                    transitionToMap("street", { x: 14, y: 6 });
+                    playSound(480, "triangle", 0.3);
+                    onTriggerDialogue(
+                      "Colectivo Línea 4",
+                      "El colectivo te dejó en la parada de la calle de tu casa (+10 min).",
+                      "The bus dropped you off at your home street stop (+10 min)."
+                    );
+                  }}
+                  className="w-full py-2 px-3 rounded-xl border font-mono text-xs text-left flex items-center justify-between border-amber-500/40 bg-amber-950/40 hover:bg-amber-900/60 text-amber-200 cursor-pointer shadow active:scale-95"
+                >
+                  <div className="flex items-center gap-2">
+                    <span>🏡</span>
+                    <div>
+                      <p className="font-bold">{language === "es" ? "Regresar a la Calle de Casa" : "Return to Home Street"}</p>
+                      <p className="text-[10px] text-amber-300/80">{language === "es" ? "Parada frente a casa" : "Stop in front of home"}</p>
+                    </div>
+                  </div>
+                  <span className="text-amber-400 font-bold">➔</span>
+                </button>
+              )}
+
+              {/* Option: Plaza Principal */}
+              <button
+                onClick={() => {
+                  setShowBusStopModal(false);
+                  advanceTime(15);
+                  transitionToMap("plaza_principal", { x: 14, y: 5 });
+                  playSound(480, "triangle", 0.3);
+                  onTriggerDialogue(
+                    "Colectivo Línea 4",
+                    "Llegaste a la Plaza Principal de la ciudad (+15 min).",
+                    "You arrived at the City Main Plaza (+15 min)."
+                  );
+                }}
+                className="w-full py-2 px-3 rounded-xl border font-mono text-xs text-left flex items-center justify-between border-teal-500/40 bg-teal-950/40 hover:bg-teal-900/60 text-teal-200 cursor-pointer shadow active:scale-95"
+              >
+                <div className="flex items-center gap-2">
+                  <span>🏛️</span>
+                  <div>
+                    <p className="font-bold">{language === "es" ? "Plaza Principal" : "Main Plaza"}</p>
+                    <p className="text-[10px] text-teal-300/80">{language === "es" ? "Monumento y cartelera comunitaria" : "Fountain & notice board"}</p>
+                  </div>
+                </div>
+                <span className="text-teal-400 font-bold">➔</span>
+              </button>
+
+              {/* Option: Shopping Mall */}
+              <button
+                onClick={() => {
+                  setShowBusStopModal(false);
+                  advanceTime(20);
+                  transitionToMap("shopping_mall", { x: 8, y: 7 });
+                  playSound(480, "triangle", 0.3);
+                  onTriggerDialogue(
+                    "Colectivo Línea 4",
+                    "Llegaste al Centro Comercial (Shopping) (+20 min).",
+                    "You arrived at the Shopping Mall (+20 min)."
+                  );
+                }}
+                className="w-full py-2 px-3 rounded-xl border font-mono text-xs text-left flex items-center justify-between border-rose-500/40 bg-rose-950/40 hover:bg-rose-900/60 text-rose-200 cursor-pointer shadow active:scale-95"
+              >
+                <div className="flex items-center gap-2">
+                  <span>🛍️</span>
+                  <div>
+                    <p className="font-bold">{language === "es" ? "Centro Comercial (Shopping)" : "Shopping Mall"}</p>
+                    <p className="text-[10px] text-rose-300/80">{language === "es" ? "Boutique, lencería y juegos" : "Boutique & arcades"}</p>
+                  </div>
+                </div>
+                <span className="text-rose-400 font-bold">➔</span>
+              </button>
+
+              {/* Option: Esperar colectivo (+10 min) */}
+              <button
+                onClick={() => {
+                  setShowBusStopModal(false);
+                  advanceTime(10);
+                  playSound(320, "sine", 0.2);
+                  onTriggerDialogue(
+                    "Parada Línea 4",
+                    "Esperaste 10 minutos bajo la garita de la parada. El aire fresco te reanima (+10 min, +5% Energía).",
+                    "You waited 10 minutes at the bus stop (+10 min, +5% Energy)."
+                  );
+                }}
+                className="w-full py-2 px-3 rounded-xl border font-mono text-xs text-left flex items-center justify-between border-slate-700 bg-slate-800/60 hover:bg-slate-700/80 text-slate-300 cursor-pointer active:scale-95"
+              >
+                <div className="flex items-center gap-2">
+                  <span>⏳</span>
+                  <div>
+                    <p className="font-bold">{language === "es" ? "Esperar el próximo colectivo (+10 min)" : "Wait for next bus (+10 min)"}</p>
+                    <p className="text-[10px] text-slate-400">{language === "es" ? "Descansar en la garita" : "Rest at the shelter"}</p>
+                  </div>
+                </div>
+                <span className="text-slate-400 font-bold">⏰</span>
+              </button>
+            </div>
+
+            <button
+              onClick={() => setShowBusStopModal(false)}
+              className="mt-3 px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs font-mono rounded-lg"
+            >
+              {language === "es" ? "Cerrar" : "Close"}
             </button>
           </div>
         </div>

@@ -9,7 +9,7 @@ import {
 import { 
   Briefcase, 
   BookOpen, 
-  Map, 
+  Map as MapIcon, 
   Settings, 
   Sparkles, 
   Volume2, 
@@ -328,7 +328,7 @@ export default function JournalAndInventory({
               : "text-slate-400 hover:text-white"
           }`}
         >
-          <Map className="w-3.5 h-3.5" />
+          <MapIcon className="w-3.5 h-3.5" />
           <span>{language === "es" ? "MAPA" : "MAP"}</span>
         </button>
 

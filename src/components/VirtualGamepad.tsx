@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Eye, EyeOff, Zap, Smartphone, BookOpen } from "lucide-react";
 import { Direction } from "../types";
 import { androidBridge } from "../lib/androidMobileBridge";
@@ -34,57 +34,140 @@ export default function VirtualGamepad({
 }: VirtualGamepadProps) {
   const [localSprinting, setLocalSprinting] = useState<boolean>(false);
   const isSprinting = controlledSprinting !== undefined ? controlledSprinting : localSprinting;
-  const toggleSprint = () => {
+  const toggleSprint = useCallback(() => {
     androidBridge.hapticAction();
     if (controlledToggleSprint) {
       controlledToggleSprint();
     } else {
       setLocalSprinting(prev => !prev);
     }
-  };
+  }, [controlledToggleSprint]);
 
-  // D-Pad and Joystick movement interval
+  // Movement interval & direction references
   const moveIntervalRef = useRef<number | null>(null);
   const activeDirRef = useRef<Direction | null>(null);
 
+  // D-Pad active direction state for visual highlight
+  const [activeDpadDir, setActiveDpadDir] = useState<Direction | null>(null);
+  const dpadBaseRef = useRef<HTMLDivElement | null>(null);
+  const dpadPointerIdRef = useRef<number | null>(null);
+
   // Joystick state
   const joystickBaseRef = useRef<HTMLDivElement | null>(null);
+  const joystickPointerIdRef = useRef<number | null>(null);
   const [stickPos, setStickPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDraggingStick, setIsDraggingStick] = useState<boolean>(false);
 
-  const startMoving = (dir: Direction) => {
+  const startMoving = useCallback((dir: Direction) => {
     activeDirRef.current = dir;
     androidBridge.hapticTap();
     onMove(dir);
     if (moveIntervalRef.current !== null) {
       clearInterval(moveIntervalRef.current);
     }
-    const moveDelay = isSprinting ? 95 : 175;
+    const moveDelay = isSprinting ? 90 : 165;
     moveIntervalRef.current = window.setInterval(() => {
       if (activeDirRef.current) {
         onMove(activeDirRef.current);
       }
     }, moveDelay);
-  };
+  }, [isSprinting, onMove]);
 
-  const stopMoving = () => {
+  const stopMoving = useCallback(() => {
     activeDirRef.current = null;
+    setActiveDpadDir(null);
     if (moveIntervalRef.current !== null) {
       clearInterval(moveIntervalRef.current);
       moveIntervalRef.current = null;
     }
+  }, []);
+
+  // Update movement interval speed dynamically when sprint mode toggles while moving
+  useEffect(() => {
+    if (activeDirRef.current && moveIntervalRef.current !== null) {
+      clearInterval(moveIntervalRef.current);
+      const moveDelay = isSprinting ? 90 : 165;
+      moveIntervalRef.current = window.setInterval(() => {
+        if (activeDirRef.current) {
+          onMove(activeDirRef.current);
+        }
+      }, moveDelay);
+    }
+  }, [isSprinting, onMove]);
+
+  // Unified D-Pad Touch / Pointer Handlers with directional sliding
+  const updateDpadDirectionFromCoords = (clientX: number, clientY: number) => {
+    if (!dpadBaseRef.current) return;
+    const rect = dpadBaseRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const dx = clientX - centerX;
+    const dy = clientY - centerY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    // Center deadzone
+    if (distance < 12) {
+      if (activeDirRef.current !== null) {
+        stopMoving();
+      }
+      return;
+    }
+
+    let dir: Direction;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      dir = dx > 0 ? "right" : "left";
+    } else {
+      dir = dy > 0 ? "down" : "up";
+    }
+
+    if (activeDirRef.current !== dir) {
+      setActiveDpadDir(dir);
+      startMoving(dir);
+    }
+  };
+
+  const handleDpadPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
+    dpadPointerIdRef.current = e.pointerId;
+    updateDpadDirectionFromCoords(e.clientX, e.clientY);
+  };
+
+  const handleDpadPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (dpadPointerIdRef.current !== e.pointerId) return;
+    e.preventDefault();
+    updateDpadDirectionFromCoords(e.clientX, e.clientY);
+  };
+
+  const handleDpadPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+    dpadPointerIdRef.current = null;
+    stopMoving();
   };
 
   // Joystick Pointer Handlers
   const handleJoystickPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    e.stopPropagation();
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
+    joystickPointerIdRef.current = e.pointerId;
     setIsDraggingStick(true);
     handleJoystickPointerMove(e);
   };
 
   const handleJoystickPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (joystickPointerIdRef.current !== e.pointerId) return;
     if (!joystickBaseRef.current) return;
+    e.preventDefault();
     const rect = joystickBaseRef.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
@@ -101,7 +184,6 @@ export default function VirtualGamepad({
     const stickY = Math.sin(angle) * clampedDist;
     setStickPos({ x: stickX, y: stickY });
 
-    // Determine direction from angle if moved significantly (deadzone 12px)
     if (distance > 12) {
       let dir: Direction = "down";
       const deg = (angle * 180) / Math.PI;
@@ -124,17 +206,18 @@ export default function VirtualGamepad({
   };
 
   const handleJoystickPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
     try {
-      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch {
-      // ignore
-    }
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+    joystickPointerIdRef.current = null;
     setIsDraggingStick(false);
     setStickPos({ x: 0, y: 0 });
     stopMoving();
   };
 
-  // Clean up on unmount
+  // Clean up movement interval on unmount
   useEffect(() => {
     return () => {
       if (moveIntervalRef.current !== null) {
@@ -146,11 +229,14 @@ export default function VirtualGamepad({
   if (!visible) {
     return (
       <button
-        onClick={() => {
+        onPointerDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
           androidBridge.hapticTap();
           onToggleVisible();
         }}
-        className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-[max(0.75rem,env(safe-area-inset-right))] z-40 p-2.5 bg-slate-900/90 border border-emerald-500/40 rounded-full text-emerald-400 hover:text-white shadow-xl backdrop-blur-sm active:scale-95 cursor-pointer"
+        style={{ touchAction: "none" }}
+        className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-[max(0.75rem,env(safe-area-inset-right))] z-40 p-2.5 bg-slate-900/90 border border-emerald-500/40 rounded-full text-emerald-400 hover:text-white shadow-xl backdrop-blur-sm active:scale-95 cursor-pointer select-none"
         title="Mostrar Gamepad Virtual para Celular"
         aria-label="Toggle Virtual Gamepad"
       >
@@ -171,57 +257,71 @@ export default function VirtualGamepad({
       {/* Top action controls: Toggle Hide, Turbo Sprint, Phone & Journal Quick Access */}
       <div className={`pointer-events-auto absolute -top-11 flex items-center gap-2 ${leftHanded ? "right-4" : "left-4"}`}>
         <button
-          onClick={() => {
+          onPointerDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
             androidBridge.hapticTap();
             onToggleVisible();
           }}
-          className="p-2 bg-slate-900/90 border border-slate-700/80 rounded-full text-slate-400 hover:text-white shadow-md backdrop-blur-sm active:scale-95 transition cursor-pointer"
+          style={{ touchAction: "none" }}
+          className="p-2 bg-slate-900/90 border border-slate-700/80 rounded-full text-slate-400 hover:text-white shadow-md backdrop-blur-sm active:scale-95 transition cursor-pointer select-none"
           title="Ocultar Gamepad"
         >
-          <EyeOff className="w-3.5 h-3.5" />
+          <EyeOff className="w-3.5 h-3.5 pointer-events-none" />
         </button>
 
         {/* Turbo Sprint Toggle */}
         <button
-          onClick={toggleSprint}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-mono font-bold border transition shadow-lg active:scale-95 cursor-pointer ${
+          onPointerDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleSprint();
+          }}
+          style={{ touchAction: "none" }}
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-mono font-bold border transition shadow-lg active:scale-95 cursor-pointer select-none ${
             isSprinting
               ? "bg-amber-500 text-slate-950 border-amber-300 shadow-amber-500/40 animate-pulse"
               : "bg-slate-900/90 text-slate-300 border-slate-700 hover:text-amber-400"
           }`}
           title="Modo Turbo / Correr"
         >
-          <Zap className={`w-3.5 h-3.5 ${isSprinting ? "fill-current" : ""}`} />
-          <span>{isSprinting ? "TURBO ON" : "CORRER"}</span>
+          <Zap className={`w-3.5 h-3.5 pointer-events-none ${isSprinting ? "fill-current" : ""}`} />
+          <span className="pointer-events-none">{isSprinting ? "TURBO ON" : "CORRER"}</span>
         </button>
 
         {/* Quick Phone HUD Button */}
         {onOpenPhone && (
           <button
-            onClick={() => {
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               androidBridge.hapticAction();
               onOpenPhone();
             }}
-            className="p-1.5 px-2.5 bg-slate-900/90 hover:bg-slate-800 border border-cyan-500/50 rounded-full text-cyan-300 shadow-md backdrop-blur-sm active:scale-95 transition flex items-center gap-1 text-[11px] font-mono cursor-pointer"
+            style={{ touchAction: "none" }}
+            className="p-1.5 px-2.5 bg-slate-900/90 hover:bg-slate-800 border border-cyan-500/50 rounded-full text-cyan-300 shadow-md backdrop-blur-sm active:scale-95 transition flex items-center gap-1 text-[11px] font-mono cursor-pointer select-none"
             title="Abrir Celular"
           >
-            <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden xs:inline font-bold">Móvil</span>
+            <Smartphone className="w-3.5 h-3.5 text-cyan-400 pointer-events-none" />
+            <span className="hidden xs:inline font-bold pointer-events-none">Móvil</span>
           </button>
         )}
 
         {/* Quick Journal HUD Button */}
         {onOpenJournal && (
           <button
-            onClick={() => {
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               androidBridge.hapticAction();
               onOpenJournal();
             }}
-            className="p-1.5 px-2.5 bg-slate-900/90 hover:bg-slate-800 border border-purple-500/50 rounded-full text-purple-300 shadow-md backdrop-blur-sm active:scale-95 transition flex items-center gap-1 text-[11px] font-mono cursor-pointer"
+            style={{ touchAction: "none" }}
+            className="p-1.5 px-2.5 bg-slate-900/90 hover:bg-slate-800 border border-purple-500/50 rounded-full text-purple-300 shadow-md backdrop-blur-sm active:scale-95 transition flex items-center gap-1 text-[11px] font-mono cursor-pointer select-none"
             title="Abrir Diario y Mochila"
           >
-            <BookOpen className="w-3.5 h-3.5 text-purple-400" />
-            <span className="hidden xs:inline font-bold">Diario</span>
+            <BookOpen className="w-3.5 h-3.5 text-purple-400 pointer-events-none" />
+            <span className="hidden xs:inline font-bold pointer-events-none">Diario</span>
           </button>
         )}
       </div>
@@ -235,7 +335,8 @@ export default function VirtualGamepad({
           onPointerMove={isDraggingStick ? handleJoystickPointerMove : undefined}
           onPointerUp={handleJoystickPointerUp}
           onPointerCancel={handleJoystickPointerUp}
-          className="pointer-events-auto relative w-36 h-36 bg-slate-950/85 border-2 border-slate-700/80 rounded-full p-2 backdrop-blur-md shadow-2xl flex items-center justify-center touch-none ring-2 ring-cyan-500/30 cursor-grab active:cursor-grabbing"
+          onLostPointerCapture={handleJoystickPointerUp}
+          className="pointer-events-auto relative w-36 h-36 bg-slate-950/85 border-2 border-slate-700/80 rounded-full p-2 backdrop-blur-md shadow-2xl flex items-center justify-center touch-none ring-2 ring-cyan-500/30 cursor-grab active:cursor-grabbing select-none"
           style={{ touchAction: "none" }}
         >
           {/* Concentric Guide Rings */}
@@ -250,7 +351,7 @@ export default function VirtualGamepad({
 
           {/* Floating Knob */}
           <div
-            className={`w-14 h-14 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 border-2 border-cyan-200 shadow-[0_0_20px_rgba(6,182,212,0.6)] flex items-center justify-center transition-transform ${
+            className={`w-14 h-14 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 border-2 border-cyan-200 shadow-[0_0_20px_rgba(6,182,212,0.6)] flex items-center justify-center pointer-events-none transition-transform ${
               isDraggingStick ? "scale-95" : "duration-150"
             }`}
             style={{
@@ -263,148 +364,80 @@ export default function VirtualGamepad({
           </div>
         </div>
       ) : (
-        /* CLASSIC RETRO D-PAD */
-        <div className="pointer-events-auto relative w-36 h-36 bg-slate-950/80 border border-slate-800/90 rounded-full p-2 backdrop-blur-md shadow-2xl flex items-center justify-center touch-none ring-1 ring-emerald-500/20">
+        /* CLASSIC RETRO D-PAD (Unified touch target with slide transitions) */
+        <div
+          ref={dpadBaseRef}
+          onPointerDown={handleDpadPointerDown}
+          onPointerMove={handleDpadPointerMove}
+          onPointerUp={handleDpadPointerUp}
+          onPointerCancel={handleDpadPointerUp}
+          onLostPointerCapture={handleDpadPointerUp}
+          style={{ touchAction: "none" }}
+          className="pointer-events-auto relative w-36 h-36 bg-slate-950/85 border border-slate-800/90 rounded-full p-2 backdrop-blur-md shadow-2xl flex items-center justify-center touch-none ring-1 ring-emerald-500/20 cursor-pointer select-none active:scale-[0.98] transition-transform"
+        >
           {/* Center core */}
-          <div className="w-10 h-10 rounded-full bg-slate-900/90 border border-slate-700/40 shadow-inner flex items-center justify-center">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/30"></div>
+          <div className="w-10 h-10 rounded-full bg-slate-900/90 border border-slate-700/40 shadow-inner flex items-center justify-center pointer-events-none">
+            <div className={`w-2.5 h-2.5 rounded-full transition-colors ${activeDpadDir ? "bg-emerald-400 shadow-[0_0_8px_#34d399]" : "bg-emerald-500/30"}`}></div>
           </div>
 
-          {/* UP */}
-          <button
-            onPointerDown={(e) => {
-              e.preventDefault();
-              try { (e.target as HTMLElement).setPointerCapture(e.pointerId); } catch {}
-              startMoving("up");
-            }}
-            onPointerUp={(e) => {
-              e.preventDefault();
-              try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch {}
-              stopMoving();
-            }}
-            onPointerCancel={stopMoving}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              startMoving("up");
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              stopMoving();
-            }}
-            style={{ touchAction: "none" }}
-            className="absolute top-1 inset-x-0 mx-auto w-12 h-11 bg-slate-800/95 hover:bg-slate-700/95 active:bg-emerald-600/80 rounded-t-xl border-t border-x border-slate-600 flex items-center justify-center active:scale-95 transition-transform cursor-pointer select-none"
-            aria-label="Move Up"
+          {/* UP Button Visual */}
+          <div
+            className={`absolute top-1 inset-x-0 mx-auto w-12 h-11 rounded-t-xl border-t border-x border-slate-600 flex items-center justify-center pointer-events-none transition-all ${
+              activeDpadDir === "up"
+                ? "bg-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.7)] scale-95 border-emerald-400"
+                : "bg-slate-800/95 text-slate-200"
+            }`}
           >
-            <ChevronUp className="w-6 h-6 text-slate-200 pointer-events-none" />
-          </button>
+            <ChevronUp className="w-6 h-6 pointer-events-none" />
+          </div>
 
-          {/* DOWN */}
-          <button
-            onPointerDown={(e) => {
-              e.preventDefault();
-              try { (e.target as HTMLElement).setPointerCapture(e.pointerId); } catch {}
-              startMoving("down");
-            }}
-            onPointerUp={(e) => {
-              e.preventDefault();
-              try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch {}
-              stopMoving();
-            }}
-            onPointerCancel={stopMoving}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              startMoving("down");
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              stopMoving();
-            }}
-            style={{ touchAction: "none" }}
-            className="absolute bottom-1 inset-x-0 mx-auto w-12 h-11 bg-slate-800/95 hover:bg-slate-700/95 active:bg-emerald-600/80 rounded-b-xl border-b border-x border-slate-600 flex items-center justify-center active:scale-95 transition-transform cursor-pointer select-none"
-            aria-label="Move Down"
+          {/* DOWN Button Visual */}
+          <div
+            className={`absolute bottom-1 inset-x-0 mx-auto w-12 h-11 rounded-b-xl border-b border-x border-slate-600 flex items-center justify-center pointer-events-none transition-all ${
+              activeDpadDir === "down"
+                ? "bg-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.7)] scale-95 border-emerald-400"
+                : "bg-slate-800/95 text-slate-200"
+            }`}
           >
-            <ChevronDown className="w-6 h-6 text-slate-200 pointer-events-none" />
-          </button>
+            <ChevronDown className="w-6 h-6 pointer-events-none" />
+          </div>
 
-          {/* LEFT */}
-          <button
-            onPointerDown={(e) => {
-              e.preventDefault();
-              try { (e.target as HTMLElement).setPointerCapture(e.pointerId); } catch {}
-              startMoving("left");
-            }}
-            onPointerUp={(e) => {
-              e.preventDefault();
-              try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch {}
-              stopMoving();
-            }}
-            onPointerCancel={stopMoving}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              startMoving("left");
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              stopMoving();
-            }}
-            style={{ touchAction: "none" }}
-            className="absolute left-1 inset-y-0 my-auto w-11 h-12 bg-slate-800/95 hover:bg-slate-700/95 active:bg-emerald-600/80 rounded-l-xl border-l border-y border-slate-600 flex items-center justify-center active:scale-95 transition-transform cursor-pointer select-none"
-            aria-label="Move Left"
+          {/* LEFT Button Visual */}
+          <div
+            className={`absolute left-1 inset-y-0 my-auto w-11 h-12 rounded-l-xl border-l border-y border-slate-600 flex items-center justify-center pointer-events-none transition-all ${
+              activeDpadDir === "left"
+                ? "bg-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.7)] scale-95 border-emerald-400"
+                : "bg-slate-800/95 text-slate-200"
+            }`}
           >
-            <ChevronLeft className="w-6 h-6 text-slate-200 pointer-events-none" />
-          </button>
+            <ChevronLeft className="w-6 h-6 pointer-events-none" />
+          </div>
 
-          {/* RIGHT */}
-          <button
-            onPointerDown={(e) => {
-              e.preventDefault();
-              try { (e.target as HTMLElement).setPointerCapture(e.pointerId); } catch {}
-              startMoving("right");
-            }}
-            onPointerUp={(e) => {
-              e.preventDefault();
-              try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch {}
-              stopMoving();
-            }}
-            onPointerCancel={stopMoving}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              startMoving("right");
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              stopMoving();
-            }}
-            style={{ touchAction: "none" }}
-            className="absolute right-1 inset-y-0 my-auto w-11 h-12 bg-slate-800/95 hover:bg-slate-700/95 active:bg-emerald-600/80 rounded-r-xl border-r border-y border-slate-600 flex items-center justify-center active:scale-95 transition-transform cursor-pointer select-none"
-            aria-label="Move Right"
+          {/* RIGHT Button Visual */}
+          <div
+            className={`absolute right-1 inset-y-0 my-auto w-11 h-12 rounded-r-xl border-r border-y border-slate-600 flex items-center justify-center pointer-events-none transition-all ${
+              activeDpadDir === "right"
+                ? "bg-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.7)] scale-95 border-emerald-400"
+                : "bg-slate-800/95 text-slate-200"
+            }`}
           >
-            <ChevronRight className="w-6 h-6 text-slate-200 pointer-events-none" />
-          </button>
+            <ChevronRight className="w-6 h-6 pointer-events-none" />
+          </div>
         </div>
       )}
 
-      {/* ACTION BUTTONS (A & B) Right Side (or Left if Left-Handed) */}
+      {/* ACTION BUTTONS (A & B) */}
       <div className="pointer-events-auto flex items-center gap-3.5 pb-2 touch-none">
         {/* Button B: Mochila / Cancelar */}
         <button
           onPointerDown={(e) => {
             e.preventDefault();
-            androidBridge.hapticAction();
-            onCancelOrBackpack();
-          }}
-          onTouchStart={(e) => {
-            e.preventDefault();
-            androidBridge.hapticAction();
-            onCancelOrBackpack();
-          }}
-          onClick={(e) => {
-            e.preventDefault();
+            e.stopPropagation();
             androidBridge.hapticAction();
             onCancelOrBackpack();
           }}
           style={{ touchAction: "none" }}
-          className="w-14 h-14 bg-gradient-to-br from-amber-600/90 to-amber-900/90 active:from-amber-500 active:to-amber-800 border-2 border-amber-400/80 rounded-full shadow-2xl flex flex-col items-center justify-center active:scale-90 transition-transform text-white font-bold font-mono cursor-pointer select-none"
+          className="w-14 h-14 bg-gradient-to-br from-amber-600/95 to-amber-900/95 active:from-amber-500 active:to-amber-800 border-2 border-amber-400/80 rounded-full shadow-2xl flex flex-col items-center justify-center active:scale-90 transition-transform text-white font-bold font-mono cursor-pointer select-none"
           aria-label="Button B"
         >
           <span className="text-base leading-none pointer-events-none">B</span>
@@ -415,21 +448,12 @@ export default function VirtualGamepad({
         <button
           onPointerDown={(e) => {
             e.preventDefault();
-            androidBridge.hapticAction();
-            onAction();
-          }}
-          onTouchStart={(e) => {
-            e.preventDefault();
-            androidBridge.hapticAction();
-            onAction();
-          }}
-          onClick={(e) => {
-            e.preventDefault();
+            e.stopPropagation();
             androidBridge.hapticAction();
             onAction();
           }}
           style={{ touchAction: "none" }}
-          className="w-16 h-16 bg-gradient-to-br from-emerald-500/90 to-emerald-800/90 active:from-emerald-400 active:to-emerald-700 border-2 border-emerald-300/90 rounded-full shadow-2xl flex flex-col items-center justify-center active:scale-90 transition-transform text-white font-extrabold font-mono ring-2 ring-emerald-500/30 cursor-pointer select-none"
+          className="w-16 h-16 bg-gradient-to-br from-emerald-500/95 to-emerald-800/95 active:from-emerald-400 active:to-emerald-700 border-2 border-emerald-300/90 rounded-full shadow-2xl flex flex-col items-center justify-center active:scale-90 transition-transform text-white font-extrabold font-mono ring-2 ring-emerald-500/30 cursor-pointer select-none"
           aria-label="Button A"
         >
           <span className="text-lg leading-none pointer-events-none">A</span>

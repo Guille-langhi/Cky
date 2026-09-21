@@ -2529,21 +2529,34 @@ export default function App() {
                 {/* OVERLAY MODAL 4: Dialogue Box Overlay */}
                 {gameState === "dialogue" && (
                   <div 
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      androidBridge.hapticDialogue();
+                      handleCloseDialogue();
+                    }}
                     onClick={() => {
                       androidBridge.hapticDialogue();
                       handleCloseDialogue();
                     }}
+                    style={{ touchAction: "none" }}
                     className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in cursor-pointer select-none"
                   >
                     <div 
+                      onPointerDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        androidBridge.hapticDialogue();
+                        handleCloseDialogue();
+                      }}
                       onClick={(e) => {
                         e.stopPropagation();
                         androidBridge.hapticDialogue();
                         handleCloseDialogue();
                       }}
+                      style={{ touchAction: "none" }}
                       className="w-full max-w-lg bg-slate-950 border-2 border-emerald-500/80 rounded-3xl p-6 shadow-2xl relative text-center ring-4 ring-emerald-500/10 active:scale-[0.99] transition-transform"
                     >
-                      <div className="text-5xl mb-3 animate-bounce">
+                      <div className="text-5xl mb-3 animate-bounce pointer-events-none">
                         {dialogSpeaker === "CKY" ? "👩" 
                           : dialogSpeaker === "Mamá" || dialogSpeaker === "Mom" ? "👩‍🦱" 
                           : dialogSpeaker === "Ángela" || dialogSpeaker === "Angela" ? "👻" 
@@ -2554,19 +2567,26 @@ export default function App() {
                           : dialogSpeaker === "Pau" ? "👩‍🎤" 
                           : "💬"}
                       </div>
-                      <span className="inline-block px-3 py-1 bg-emerald-500 text-slate-950 font-mono font-bold text-xs rounded-full uppercase tracking-widest mb-3 shadow-md">
+                      <span className="inline-block px-3 py-1 bg-emerald-500 text-slate-950 font-mono font-bold text-xs rounded-full uppercase tracking-widest mb-3 shadow-md pointer-events-none">
                         {dialogSpeaker}
                       </span>
-                      <p className="text-slate-100 font-mono text-sm leading-relaxed mb-6">
+                      <p className="text-slate-100 font-mono text-sm leading-relaxed mb-6 pointer-events-none">
                         {dialogText}
                       </p>
                       <button
+                        onPointerDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          androidBridge.hapticDialogue();
+                          handleCloseDialogue();
+                        }}
                         onClick={(e) => {
                           e.stopPropagation();
                           androidBridge.hapticDialogue();
                           handleCloseDialogue();
                         }}
-                        className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-mono font-bold text-xs rounded-2xl transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+                        style={{ touchAction: "none" }}
+                        className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-mono font-bold text-xs rounded-2xl transition-all shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer"
                       >
                         {language === "es" ? "👉 TOCAR PARA CONTINUAR" : "👉 TAP TO CONTINUE"}
                       </button>
@@ -2604,7 +2624,12 @@ export default function App() {
                       </div>
 
                       <button
+                        onPointerDown={(e) => {
+                          e.preventDefault();
+                          setLevelUpData(null);
+                        }}
                         onClick={() => setLevelUpData(null)}
+                        style={{ touchAction: "none" }}
                         className="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-display font-bold text-sm rounded-xl shadow-lg transition-transform active:scale-95 uppercase tracking-wider cursor-pointer"
                       >
                         {language === "es" ? "¡CONTINUAR ADELANTE!" : "CONTINUE FORWARD!"}
