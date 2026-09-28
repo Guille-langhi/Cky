@@ -611,6 +611,15 @@ export default function App() {
       unlocked: false
     },
     {
+      id: "chapter_01_alanis",
+      titleEs: "La Revelación de Alanis (Líder Suprema)",
+      titleEn: "Alanis's Revelation (Supreme Leader)",
+      date: "20/07/2026",
+      textEs: "Recibí un mensaje y llamada misteriosa de Alanis, la Líder Suprema. Me reveló que soy la heredera de un linaje de poder arcano para hablar con espíritus y me advirtió que mi vecina tiene poderes oscuros y buscará destruirme. Me encomendó contactar a un espíritu.",
+      textEn: "I received a mysterious message and call from Alanis, the Supreme Leader. She revealed that I am the heir to an arcane power lineage to speak with spirits, and warned me that my neighbor has dark powers and seeks to destroy me. She tasked me with contacting a spirit.",
+      unlocked: false
+    },
+    {
       id: "chapter_01_angela_tomb",
       titleEs: "El Pedido de Ángela (Tumba Rosa)",
       titleEn: "Angela's Request (Pink Grave)",
@@ -1362,7 +1371,11 @@ export default function App() {
             canvasStateRef.current.setHasTalkedToAlanis(true);
           }
         }
-        addXP(10);
+        addXP(20);
+        unlockDiaryEntry("chapter_01_alanis");
+        setTimeout(() => {
+          triggerAngelaPhoneChat();
+        }, 1200);
       } else if (selectedReply.actionId === "finish_angela_quest") {
         if (canvasStateRef.current) {
           canvasStateRef.current.hasTalkedToAngela = true;
@@ -1638,7 +1651,7 @@ export default function App() {
         playerLevel: 2,
         gameState: "playing",
         currentMap: "bedroom",
-        playerPos: { x: 8, y: 3 },
+        playerPos: { x: 6, y: 3 },
         facing: "down",
         gameTime: { hour: 5, minute: 0 },
         totalGameMinutes: 1740,
@@ -2445,7 +2458,9 @@ export default function App() {
                   onUpdateCanvasState={(data) => {
                     canvasStateRef.current = data;
                     if (data?.currentDay !== undefined && data.currentDay !== currentDay) {
-                      setCurrentDay(data.currentDay);
+                      queueMicrotask(() => {
+                        setCurrentDay(data.currentDay);
+                      });
                     }
                   }}
                   onAutosave={handleAutosave}

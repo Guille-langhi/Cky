@@ -52,17 +52,21 @@ export default function KitchenSandwichMinigame({
     let animId: number;
 
     const loop = () => {
+      let changeDir = 0;
       setTimingVal((prev) => {
         let next = prev + timingDir;
-        if (next > 100) {
+        if (next >= 100) {
           next = 100;
-          setTimingDir(-2.8);
-        } else if (next < 0) {
+          changeDir = -2.8;
+        } else if (next <= 0) {
           next = 0;
-          setTimingDir(2.8);
+          changeDir = 2.8;
         }
         return next;
       });
+      if (changeDir !== 0 && changeDir !== timingDir) {
+        setTimingDir(changeDir);
+      }
       animId = requestAnimationFrame(loop);
     };
 

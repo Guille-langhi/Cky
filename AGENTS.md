@@ -14,18 +14,26 @@ Este archivo documenta las reglas de juego, estado de desarrollo, tareas del Dí
 2. **Libros y Cuadernos (Mueble 2)**:
    - Se requiere tener la Mochila en el inventario para poder guardarlos.
 
-3. **Botella de Agua Favorita (Heladera de la Cocina)**:
+3. **Mesa de Luz de CKY (Habitación de CKY • Tile 10)**:
+   - Ubicación: Junto a la cama (fila 5, col 8).
+   - Renderizado en canvas: Mesa de madera de roble con molduras y tiradores dorados, velador con iluminación radial interactiva (ON/OFF), diario íntimo con candado y celular con cable de carga de pared y LED indicador.
+   - **Recoger el Diario Íntimo**: Otorga el ítem `mission_diary` (+15 XP, +2 min). Permite leer misiones, secretos o guardarlo en el cajón.
+   - **Recoger el Celular Smartphone**: Otorga el ítem `pocket_phone` con 100% de batería (+15 XP, +2 min).
+   - **Poner a cargar el Celular**: Opción para conectar el celular al cargador (+10 min, restaura batería a 100% y activa estado de carga visual en el canvas).
+   - Si se intenta abrir el celular desde la interfaz sin haberlo recogido, un diálogo le recuerda al jugador que se encuentra en la mesa de luz.
+
+4. **Botella de Agua Favorita (Heladera de la Cocina)**:
    - Nombre: **Botella de Agua Favorita (Llena)**.
    - Efecto: Restaura **+30% de Sed** y **+10% de Hambre**.
    - Se puede guardar / tomar desde la Heladera de la Cocina o rellenar en la Pileta de la Cocina.
 
-4. **Sándwich de Salame y Queso (Heladera de la Cocina)**:
+5. **Sándwich de Salame y Queso (Heladera de la Cocina)**:
    - Opción en la Heladera: **Tomar alimento**.
    - Cooldown: Se puede tomar 1 cada 6 horas reales/de juego.
    - Diálogo de CKY: *"mmmmm Mi favorito, sándwich de Salame y queso"*.
    - Se guarda en la Mochila y restaura **+40% de Hambre**.
 
-5. **Habitación de la Madre (Peinador y Planta)**:
+6. **Habitación de la Madre (Peinador y Planta)**:
    - **Peinador de Mamá**: Se puede recoger el **Perfume Favorito** (restaura +50% de Perfume). CKY dice: *"Hija de p*** ¡acá esta mi perfume favorito!"*.
    - **Planta de Mamá**: Se puede recoger un **Billete de $500** escondido en la maceta. CKY dice: *"Gracias plantita"*.
 
@@ -37,6 +45,20 @@ Este archivo documenta las reglas de juego, estado de desarrollo, tareas del Dí
 3. **Recoger la mochila** (🎒): Mueble 1 (+5 XP, +5 min).
 4. **Recoger botella de agua** (🧴): Heladera de la cocina (+5 XP, +2 min).
 5. **Recoger los libros de la escuela** (📚): Mueble 2 (+5 XP, +5 min).
+6. **Recoger el celular de la mesa de luz** (📱): Mesa de luz de la habitación (+5 XP, +2 min).
+7. **Recoger el diario íntimo de la mesa de luz** (📖): Mesa de luz de la habitación (+5 XP, +2 min).
+8. **Tomar el colectivo para ir a la escuela** (🚌): Colectivo escolar amarillo frente a la casa (+15 XP, +10 min). Requiere uniforme escolar. Al interactuar se presenta y nombra a la vecina rubia antes de subir al interior del colectivo o viajar directo al patio escolar.
+
+---
+
+## 👻 Día 2: "Una Nueva Amiga" (Cementerio Municipal y la Ducha)
+1. **Transición y Despertar**: Transición cinemática con halo rosa y alarma a las 05:00 AM. Diálogo de CKY planeando actuar como si fuera a la escuela pero tomar el 4 al cementerio.
+2. **Rutina Matutina**: Uniforme escolar, aseo, mochila, libros, botella de agua y el sándwich de salame y queso de la heladera. Mamá saluda afectuosamente en la cocina.
+3. **Viaje en Línea 4 al Cementerio**: Colectivo verde Línea 4 hacia el Cementerio Municipal. Colisión sólida para lápidas y paso por el portón de hierro (tile 76).
+4. **Tumba Rosa y Amistad con Ángela**: Entrega del sándwich a Ángela en su tumba rosa (+50 XP). Revelación sobre la Vecina abriendo grietas al Limbo.
+5. **Batalla Astral contra la Sombra del Limbo**: Combate RPG por turnos con CKY (Luz del Linaje, Mochilazo, Ver lo Invisible) y Ángela (Distracción Picante, Fogonazo Rosa) (+60 XP).
+6. **Ducha con Ángela y Misterio de la Toalla**: Regreso a casa, ducha con chistes de Ángela, toallero vacío y carrera en cueros a la habitación. Hallazgo de la toalla en la silla (+40 XP) y cambio a piyama.
+7. **Noche y Cierre**: CKY se acuesta en su cama a descansar profundamente (+30 XP) y se transiciona al Día 3.
 
 ---
 

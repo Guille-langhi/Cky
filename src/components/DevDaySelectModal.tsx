@@ -24,21 +24,25 @@ export default function DevDaySelectModal({
       tagEn: "Start • House & School No. 87",
       badgeColor: "bg-emerald-950/80 text-emerald-400 border-emerald-500/40",
       icon: "🎒",
-      descEs: "Comienzo de la historia. Levantarse a las 07:00 AM, vestirse con el uniforme, recoger la mochila, libros, agua y tomar el colectivo escolar.",
-      descEn: "Start of story. Wake up at 07:00 AM, wear school uniform, grab backpack, books, water, and catch school bus.",
+      descEs: "Comienzo de la historia. Levantarse a las 07:00 AM, vestirse con el uniforme, recoger la mochila, libros, agua, ir a la escuela, y recibir en casa la misteriosa llamada y misión de Alanis junto al contacto de Ángela.",
+      descEn: "Start of story. Wake up at 07:00 AM, wear school uniform, grab backpack, books, water, go to school, and receive at home Alanis's mysterious call and mission alongside Angela's contact.",
       featuresEs: [
         "👕 Uniforme escolar & Ropero",
         "🧼 Aseo en baño / ducha",
         "🎒 Mochila y libros escolares",
         "🧴 Botella de agua en la heladera",
-        "🚌 Colectivo escolar & Escuela N° 87"
+        "🚌 Colectivo escolar & Escuela N° 87",
+        "👑 Misión y Revelación de Alanis (Líder Suprema)",
+        "👻 Contacto con Ángela & Preparación Día 2"
       ],
       featuresEn: [
         "👕 School uniform & Wardrobe",
         "🧼 Bathroom / shower grooming",
         "🎒 Backpack & school books",
         "🧴 Water bottle from fridge",
-        "🚌 School bus & School No. 87"
+        "🚌 School bus & School No. 87",
+        "👑 Alanis's Mission & Revelation (Supreme Leader)",
+        "👻 Angela's Contact & Day 2 Prep"
       ]
     },
     {

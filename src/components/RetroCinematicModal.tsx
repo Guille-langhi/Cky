@@ -372,7 +372,7 @@ export default function RetroCinematicModal({
     const interval = setInterval(() => {
       setAutoProgress((prev) => {
         if (prev >= 100) {
-          handleNext();
+          setTimeout(handleNext, 0);
           return 0;
         }
         return prev + 2.5; // ~4 seconds per slide

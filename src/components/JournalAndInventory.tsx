@@ -875,7 +875,7 @@ export default function JournalAndInventory({
                         </p>
 
                         <div className="flex items-center gap-2 mt-2">
-                          {item.id === "phone" && onOpenPhone && (
+                          {(item.id === "phone" || item.id === "pocket_phone") && onOpenPhone && (
                             <button
                               onClick={onOpenPhone}
                               className="py-1 px-3 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 rounded text-[10px] font-bold transition-all flex items-center gap-1"
@@ -1336,6 +1336,61 @@ export default function JournalAndInventory({
               time: 5,
               icon: "📚",
               completed: hasBooks,
+            },
+            {
+              id: "phone_nightstand",
+              titleEs: "Recoger el celular de la mesa de luz",
+              titleEn: "Pick up smartphone from nightstand",
+              descEs: "Desconecta y toma tu celular con 100% de batería de la mesa de luz junto a la cama.",
+              descEn: "Disconnect and pick up your 100% battery smartphone from the nightstand by the bed.",
+              xp: 5,
+              time: 2,
+              icon: "📱",
+              completed: inventory.some(i => i.id === "pocket_phone" || i.id === "phone"),
+            },
+            {
+              id: "diary_nightstand",
+              titleEs: "Recoger el diario íntimo de la mesa de luz",
+              titleEn: "Pick up private diary from nightstand",
+              descEs: "Toma tu diario íntimo con candado de la mesa de luz de tu habitación.",
+              descEn: "Take your private diary with lock from your bedroom nightstand.",
+              xp: 5,
+              time: 2,
+              icon: "📖",
+              completed: inventory.some(i => i.id === "mission_diary" || i.id === "diary"),
+            },
+            {
+              id: "bus_school",
+              titleEs: "Tomar el colectivo para ir a la escuela",
+              titleEn: "Take bus to school",
+              descEs: "Sal a la calle y toma el colectivo escolar rumbo a la Escuela N° 87.",
+              descEn: "Go out to the street and board the school bus to School No. 87.",
+              xp: 15,
+              time: 10,
+              icon: "🚌",
+              completed: diaryEntries.some(e => e.id === "chapter_01_bus" && e.unlocked) || currentMapId === "school_courtyard" || currentMapId === "classroom_3" || currentDay > 1,
+            },
+            {
+              id: "alanis_revelation",
+              titleEs: "Misión de Alanis: La Revelación Espiritual",
+              titleEn: "Alanis's Mission: Spiritual Revelation",
+              descEs: "Recibe el mensaje y llamada de Alanis (Líder Suprema) para descubrir tu linaje y la advertencia sobre la vecina.",
+              descEn: "Receive the message and call from Alanis (Supreme Leader) to discover your lineage and the warning about the neighbor.",
+              xp: 20,
+              time: 5,
+              icon: "👑",
+              completed: diaryEntries.some(e => e.id === "chapter_01_alanis" && e.unlocked) || currentDay > 1,
+            },
+            {
+              id: "angela_tomb_contact",
+              titleEs: "Contactar a Ángela y preparar el Día 2",
+              titleEn: "Contact Angela & Prepare Day 2",
+              descEs: "Habla con el espíritu de Ángela en tu celular para planear llevarle un sándwich a su tumba rosa y termina el Día 1 descansando en tu cama.",
+              descEn: "Speak with Angela's spirit on your phone to plan bringing a sandwich to her pink grave and finish Day 1 resting in your bed.",
+              xp: 15,
+              time: 5,
+              icon: "👻",
+              completed: diaryEntries.some(e => e.id === "chapter_01_angela_tomb" && e.unlocked) || currentDay > 1,
             },
           ];
 

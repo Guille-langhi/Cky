@@ -236,3 +236,41 @@ export function getLatestSave(): SaveSlotData | null {
   }
   return latest;
 }
+
+export function exportAllSavesJson(): string {
+  try {
+    const backup: Record<string, any> = {
+      slots: getAllSaveSlots(),
+      cky_current_day: localStorage.getItem("cky_current_day"),
+      cky_free_roam_active: localStorage.getItem("cky_free_roam_active"),
+      cky_angela_sandwich_delivered: localStorage.getItem("cky_angela_sandwich_delivered"),
+      exportDate: new Date().toISOString()
+    };
+    return JSON.stringify(backup, null, 2);
+  } catch (e) {
+    console.error("Error exporting saves:", e);
+    return "";
+  }
+}
+
+export function importAllSavesJson(jsonStr: string): boolean {
+  try {
+    const parsed = JSON.parse(jsonStr);
+    if (!parsed || typeof parsed !== "object") return false;
+    if (parsed.slots && typeof parsed.slots === "object") {
+      for (const slotId in parsed.slots) {
+        const val = parsed.slots[slotId];
+        if (val) {
+          localStorage.setItem(STORAGE_PREFIX + slotId, JSON.stringify(val));
+        }
+      }
+    }
+    if (parsed.cky_current_day) localStorage.setItem("cky_current_day", parsed.cky_current_day);
+    if (parsed.cky_free_roam_active) localStorage.setItem("cky_free_roam_active", parsed.cky_free_roam_active);
+    if (parsed.cky_angela_sandwich_delivered) localStorage.setItem("cky_angela_sandwich_delivered", parsed.cky_angela_sandwich_delivered);
+    return true;
+  } catch (e) {
+    console.error("Error importing saves:", e);
+    return false;
+  }
+}

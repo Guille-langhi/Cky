@@ -72,31 +72,39 @@ export default function SoccerPenaltyMinigame({
       if (!active) return;
 
       if (phase === "aiming") {
+        let newAimDir = 0;
         setAimAngle((prev) => {
           let next = prev + aimDir;
-          if (next > 40) {
+          if (next >= 40) {
             next = 40;
-            setAimDir(-2);
-          } else if (next < -40) {
+            newAimDir = -2;
+          } else if (next <= -40) {
             next = -40;
-            setAimDir(2);
+            newAimDir = 2;
           }
           return next;
         });
+        if (newAimDir !== 0 && newAimDir !== aimDir) {
+          setAimDir(newAimDir);
+        }
       }
 
       if (phase === "power") {
+        let newPowerDir = 0;
         setPower((prev) => {
           let next = prev + powerDir;
-          if (next > 100) {
+          if (next >= 100) {
             next = 100;
-            setPowerDir(-3.5);
-          } else if (next < 0) {
+            newPowerDir = -3.5;
+          } else if (next <= 0) {
             next = 0;
-            setPowerDir(3.5);
+            newPowerDir = 3.5;
           }
           return next;
         });
+        if (newPowerDir !== 0 && newPowerDir !== powerDir) {
+          setPowerDir(newPowerDir);
+        }
       }
 
       animFrameRef.current = requestAnimationFrame(loop);

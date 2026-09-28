@@ -70,6 +70,24 @@ export const AndroidExportModal: React.FC<AndroidExportModalProps> = ({
                 ? "El repositorio incluye el flujo de trabajo automatizado en `.github/workflows/build-apk.yml`. Al hacer push o exportar a GitHub, compila automáticamente el archivo `CKY-RPG-Android.apk` listo para descargar e instalar en tu celular."
                 : "The repository includes an automated workflow in `.github/workflows/build-apk.yml`. On GitHub push, it compiles the `CKY-RPG-Android.apk` artifact ready to install on your phone."}
             </p>
+
+            {/* Seamless Update Notice */}
+            <div className="mt-4 rounded-lg bg-emerald-900/30 border border-emerald-500/40 p-3 text-xs text-emerald-200 space-y-1.5">
+              <div className="flex items-center gap-2 font-bold text-emerald-300">
+                <CheckCircle className="h-4 w-4 text-emerald-400" />
+                <span>{language === "es" ? "¡Actualización Directa Sin Desinstalar Activada!" : "Seamless In-Place Updates Enabled!"}</span>
+              </div>
+              <p className="leading-relaxed">
+                {language === "es"
+                  ? "Se configuró una clave de firma fija (debug.keystore) y código de versión incremental automático (versionCode). Ahora, cada nueva versión del APK se instala como una actualización directa sobre la app existente en tu teléfono, sin tener que eliminarla ni perder tus partidas guardadas."
+                  : "Fixed signing key (debug.keystore) and automatic incremental version code (versionCode) are configured. Every new APK build installs as an in-place update over the existing app, preserving your save games."}
+              </p>
+              <p className="text-[11px] text-amber-300/90 leading-relaxed pt-1 border-t border-emerald-500/20">
+                {language === "es"
+                  ? "Nota: Si tenías instalado un APK compilado previamente con la clave aleatoria anterior, desinstálalo solo por esta única vez antes de instalar esta nueva versión. A partir de aquí, todas las futuras descargas se actualizarán directamente."
+                  : "Note: If you have an APK installed with the previous random key, uninstall it just this one time to install this build. All future downloads will update directly."}
+              </p>
+            </div>
           </div>
 
           {/* Method: Local Android Studio / CLI build */}

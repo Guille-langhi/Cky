@@ -155,11 +155,17 @@ export default function TownNoticeBoardModal({
           </button>
         </div>
 
-        <p className="text-xs text-slate-300">
-          {language === "es"
-            ? "Ayuda a los vecinos y profesores del pueblo en sus tareas cotidianas para ganar dinero y experiencia extra:"
-            : "Help neighbors and teachers with daily tasks to earn extra money and experience:"}
-        </p>
+        <div className="p-2.5 bg-emerald-950/40 border border-emerald-500/30 rounded-2xl text-[11px] text-emerald-200 leading-relaxed">
+          <p className="font-bold text-emerald-300 flex items-center gap-1.5 mb-1">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            {language === "es" ? "¿Cómo completar las misiones?" : "How to complete quests?"}
+          </p>
+          <p>
+            {language === "es"
+              ? "Podés completarlas de inmediato tocando el botón «Cumplir Recado», o cumplirlas explorando el mundo (los apuntes en el banco del patio escolar, la fuente central de la plaza y el puesto de Don Pepe)."
+              : "You can complete them right here by tapping 'Complete Favor', or by exploring the world (study notes at the school courtyard bench, main plaza fountain, and Don Pepe's stand)."}
+          </p>
+        </div>
 
         {/* Quests List */}
         <div className="space-y-3 overflow-y-auto max-h-80 pr-1">
@@ -207,15 +213,20 @@ export default function TownNoticeBoardModal({
 
                   {!isDone ? (
                     <button
-                      onClick={() => handleCompleteQuest(quest)}
-                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-[10px] uppercase tracking-wider flex items-center gap-1 cursor-pointer transition-colors shadow"
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCompleteQuest(quest);
+                      }}
+                      className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl text-[11px] uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-all shadow-lg active:scale-95 border border-emerald-400/60"
                     >
-                      <Sparkles className="w-3 h-3" />
+                      <Sparkles className="w-3.5 h-3.5" />
                       {language === "es" ? "Cumplir Recado" : "Complete Favor"}
                     </button>
                   ) : (
-                    <span className="text-[10px] text-emerald-400 font-bold">
-                      {language === "es" ? "✓ Recompensa cobrada" : "✓ Reward collected"}
+                    <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1 bg-emerald-950/60 px-2 py-1 rounded-lg border border-emerald-800/60">
+                      <CheckCircle className="w-3 h-3 text-emerald-400" />
+                      {language === "es" ? "Recompensa cobrada" : "Reward collected"}
                     </span>
                   )}
                 </div>

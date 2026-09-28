@@ -14,6 +14,7 @@ import {
   SoulmateInfo
 } from "../types";
 import SoulmateCreationModal from "./SoulmateCreationModal";
+import Day2ShadowBattleModal from "./Day2ShadowBattleModal";
 import Day5SexyPhotosModal from "./Day5SexyPhotosModal";
 import Day6DarkFormBattleModal from "./Day6DarkFormBattleModal";
 import Day6AlanisCutsceneModal from "./Day6AlanisCutsceneModal";
@@ -144,8 +145,8 @@ const BedroomGrid = [
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 13, 0, 0, 0, 0, 0, 4, 4, 1],
   [1, 13, 0, 0, 0, 0, 0, 4, 4, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 14, 14, 0, 0, 10, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 10, 1],
+  [1, 0, 0, 0, 14, 14, 0, 0, 0, 1],
   [1, 1, 2, 1, 1, 1, 1, 1, 1, 1],
 ];
 
@@ -365,12 +366,12 @@ const SchoolCourtyardGrid = [
 // 101 = Lockers, 102 = Cartelera de Avisos, 140 = Puerta Secreta al Sótano
 const SchoolHallwayGrid = [
   [1, 82, 1, 1, 83, 1, 1, 84, 1, 1, 85, 1, 1, 86, 1, 1, 87, 1],
-  [1, 0, 101, 0, 0, 101, 0, 0, 102, 0, 101, 0, 0, 101, 0, 0, 140, 1],
+  [1, 0, 101, 0, 0, 101, 0, 0, 102, 0, 101, 0, 0, 101, 0, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 101, 0, 0, 0, 1],
+  [1, 0, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 101, 0, 0, 140, 1],
   [1, 1, 1, 88, 1, 1, 1, 89, 1, 1, 1, 90, 1, 1, 1, 80, 1, 1],
 ];
 
@@ -760,19 +761,25 @@ export default function GameCanvas({
     const updateDimensions = () => {
       if (!containerRef.current) return;
       const { clientWidth, clientHeight } = containerRef.current;
-      if (clientWidth <= 0 || clientHeight <= 0) return;
+      if (!clientWidth || !clientHeight || clientWidth <= 0 || clientHeight <= 0 || isNaN(clientWidth) || isNaN(clientHeight)) return;
 
       const aspect = clientHeight / clientWidth;
+      if (!isFinite(aspect) || isNaN(aspect)) return;
+
       if (aspect >= 1) {
         // Vertical mobile/portrait screen: base width 400, scale height to occupy full vertical display
         const targetHeight = Math.round(400 * aspect);
         const clampedHeight = Math.max(360, Math.min(880, targetHeight));
-        setCanvasDimensions({ width: 400, height: clampedHeight });
+        if (Number.isFinite(clampedHeight)) {
+          setCanvasDimensions({ width: 400, height: clampedHeight });
+        }
       } else {
         // Landscape screen: base height 360, scale width
         const targetWidth = Math.round(360 / aspect);
         const clampedWidth = Math.max(400, Math.min(880, targetWidth));
-        setCanvasDimensions({ width: clampedWidth, height: 360 });
+        if (Number.isFinite(clampedWidth)) {
+          setCanvasDimensions({ width: clampedWidth, height: 360 });
+        }
       }
     };
 
@@ -884,6 +891,7 @@ export default function GameCanvas({
   const [hasTriggeredMomPhotoEvent, setHasTriggeredMomPhotoEvent] = useState<boolean>(false);
   const [showNightstandModal, setShowNightstandModal] = useState<boolean>(false);
   const [isPhoneCharging, setIsPhoneCharging] = useState<boolean>(false);
+  const [isBedsideLampOn, setIsBedsideLampOn] = useState<boolean>(true);
   const [showSinkModal, setShowSinkModal] = useState<boolean>(false);
   const [showToiletModal, setShowToiletModal] = useState<boolean>(false);
   const [showShowerModal, setShowShowerModal] = useState<boolean>(false);
@@ -912,9 +920,19 @@ export default function GameCanvas({
   const [isDay3Intro, setIsDay3Intro] = useState<boolean>(false);
   const [day3IntroStep, setDay3IntroStep] = useState<number>(1);
   const [hasDay2WalkDialogueTriggered, setHasDay2WalkDialogueTriggered] = useState<boolean>(false);
-  const [day2ShowerCompleted, setDay2ShowerCompleted] = useState<boolean>(false);
-  const [day2TowelMissing, setDay2TowelMissing] = useState<boolean>(false);
-  const [day2TowelFoundOnChair, setDay2TowelFoundOnChair] = useState<boolean>(false);
+  const [day2ShowerCompleted, setDay2ShowerCompleted] = useState<boolean>(
+    () => localStorage.getItem("cky_day2_shower_completed") === "true"
+  );
+  const [day2TowelMissing, setDay2TowelMissing] = useState<boolean>(
+    () => localStorage.getItem("cky_day2_towel_missing") === "true"
+  );
+  const [day2TowelFoundOnChair, setDay2TowelFoundOnChair] = useState<boolean>(
+    () => localStorage.getItem("cky_day2_towel_found") === "true"
+  );
+  const [showDay2ShadowBattleModal, setShowDay2ShadowBattleModal] = useState<boolean>(false);
+  const [day2ShadowDefeated, setDay2ShadowDefeated] = useState<boolean>(
+    () => localStorage.getItem("cky_day2_shadow_defeated") === "true"
+  );
 
   // Day 3 Narrative & Disappearance States
   const [day3SuppliesFoundInMomRoom, setDay3SuppliesFoundInMomRoom] = useState<boolean>(false);
@@ -1164,19 +1182,46 @@ export default function GameCanvas({
     return localStorage.getItem("cky_free_roam_active") === "true";
   });
 
-  const [localCurrentDay, setLocalCurrentDay] = useState<number>(1);
+  const [localCurrentDay, setLocalCurrentDay] = useState<number>(() => propCurrentDay ?? 1);
   const currentDay = propCurrentDay ?? localCurrentDay;
+  const currentDayRef = useRef<number>(currentDay);
+
+  useEffect(() => {
+    currentDayRef.current = currentDay;
+  }, [currentDay]);
+
+  useEffect(() => {
+    if (propCurrentDay !== undefined) {
+      setLocalCurrentDay(propCurrentDay);
+    }
+  }, [propCurrentDay]);
+
   const setCurrentDay = useCallback((day: number | ((prev: number) => number)) => {
-    setLocalCurrentDay(prev => {
-      const nextDay = typeof day === "function" ? day(prev) : day;
-      if (onSetCurrentDay) onSetCurrentDay(nextDay);
-      return nextDay;
-    });
+    const nextDay = typeof day === "function" ? day(currentDayRef.current) : day;
+    currentDayRef.current = nextDay;
+    setLocalCurrentDay(nextDay);
+    if (onSetCurrentDay) {
+      queueMicrotask(() => {
+        onSetCurrentDay(nextDay);
+      });
+    }
   }, [onSetCurrentDay]);
 
   const [showGreenBusModal, setShowGreenBusModal] = useState<boolean>(false);
-  const [isGreenBusWaiting, setIsGreenBusWaiting] = useState<boolean>(false);
-  const [hasDeliveredAngelaSandwich, setHasDeliveredAngelaSandwich] = useState<boolean>(false);
+  const [isGreenBusWaiting, setIsGreenBusWaiting] = useState<boolean>(true);
+  const [hasDeliveredAngelaSandwich, setHasDeliveredAngelaSandwich] = useState<boolean>(
+    () => localStorage.getItem("cky_angela_sandwich_delivered") === "true"
+  );
+
+  // Anti-stuck safety: If bedroom exploration is active and position is in the bed block, place player on the open floor
+  useEffect(() => {
+    if (currentMap === "bedroom" && introStep === -1 && !isDay2Intro && !isDay3Intro && !isDay4Intro && !isDay5Intro && !isDay6Intro && !isDay7Intro && !isDay8Intro) {
+      if (playerPos.x === 8 && (playerPos.y === 3 || playerPos.y === 4)) {
+        setPlayerPos({ x: 6, y: 3 });
+        setFacing("down");
+      }
+    }
+  }, [currentMap, introStep, isDay2Intro, isDay3Intro, isDay4Intro, isDay5Intro, isDay6Intro, isDay7Intro, isDay8Intro, playerPos.x, playerPos.y]);
   const [showShowerChoiceModal, setShowShowerChoiceModal] = useState<boolean>(false);
   const [hasTalkedToAlanis, setHasTalkedToAlanis] = useState<boolean>(false);
   const [hasTalkedToAngela, setHasTalkedToAngela] = useState<boolean>(false);
@@ -1344,6 +1389,9 @@ export default function GameCanvas({
                                       msg9En,
                                       () => {
                                         setHasTalkedToAlanis(true);
+                                        unlockDiaryEntry("chapter_01_alanis");
+                                        addXP(20);
+                                        playSound(520, "sine", 0.4);
 
                                         if (currentMap === "bedroom") {
                                           setPlayerPos({ x: 7, y: 4 });
@@ -1352,8 +1400,13 @@ export default function GameCanvas({
 
                                         onTriggerDialogue(
                                           "CKY",
-                                          "¡Esa llamada de Alanis estuvo rarísima! Quedó guardada en los mensajes de mi celular. Ahora puedo seguir recorriendo la casa con libertad y cuando me acueste a dormir en mi cama terminaré el día.",
-                                          "That call from Alanis was weird! It was saved in my phone messages. Now I can freely explore the house and when I go to bed I will end the day."
+                                          "¡Esa llamada de Alanis estuvo rarísima (+20 XP)! Me reveló que tengo un linaje divino para hablar con espíritus y que la vecina tiene poderes oscuros y buscará destruirme. Quedó anotado en mi diario. Alanis me ordenó intentar hablar con un espíritu...",
+                                          "That call from Alanis was weird (+20 XP)! She revealed my divine lineage to speak with spirits and that the neighbor has dark powers and will try to destroy me. Recorded in my diary. Alanis ordered me to try speaking with a spirit...",
+                                          () => {
+                                            setTimeout(() => {
+                                              startAngelaDialogueChain();
+                                            }, 700);
+                                          }
                                         );
                                       }
                                     );
@@ -1388,7 +1441,7 @@ export default function GameCanvas({
   const [showNameNeighborModal, setShowNameNeighborModal] = useState<boolean>(false);
   const [inputNeighborName, setInputNeighborName] = useState<string>("");
   const [isCutsceneActive, setIsCutsceneActive] = useState<boolean>(false);
-  const [isBusWaitingAtDoor, setIsBusWaitingAtDoor] = useState<boolean>(false);
+  const [isBusWaitingAtDoor, setIsBusWaitingAtDoor] = useState<boolean>(true);
   const [hasSatInBusSeat, setHasSatInBusSeat] = useState<boolean>(false);
   const [hasPassengersBoarded, setHasPassengersBoarded] = useState<boolean>(
     () => localStorage.getItem("cky_bus_passengers") === "true"
@@ -1451,6 +1504,26 @@ export default function GameCanvas({
         triggerAlanisPhoneChat();
       }
     }
+
+    const hasPhoneItem = hasPhone || inventory.some((i) => i.id === "pocket_phone" || i.id === "phone");
+    if (!hasPhoneItem) {
+      playSound(220, "triangle", 0.2);
+      if (isPhoneCharging) {
+        onTriggerDialogue(
+          "Celular de CKY",
+          "Tu celular se encuentra cargando en la mesa de luz de tu habitación. Puedes desconectarlo e ir a buscarlo cuando desees.",
+          "Your phone is currently charging on the nightstand in your bedroom. You can unplug and grab it whenever you want."
+        );
+      } else {
+        onTriggerDialogue(
+          "Celular de CKY",
+          "Aún no tienes el celular en tus bolsillos. Está en la mesa de luz de tu habitación junto a la cama.",
+          "You don't have your phone in your pockets yet. It is resting on the nightstand next to your bed."
+        );
+      }
+      return;
+    }
+
     playSound(400, "sine", 0.15);
     onOpenPhone();
   };
@@ -1627,6 +1700,7 @@ export default function GameCanvas({
       `She is ${finalName}, my neighbor... we grew up together and were best friends, but something changed a year ago and now she is my enemy. You'll get to know her soon`,
       () => {
         setIsCutsceneActive(false);
+        boardSchoolBusFinal(finalName);
       }
     );
   };
@@ -1636,6 +1710,8 @@ export default function GameCanvas({
     setHasNeighborBoardedBus(true);
     setHasPassengersBoarded(true);
     localStorage.setItem("cky_neighbor_boarded", "true");
+    unlockDiaryEntry("chapter_01_bus");
+    addXP(15);
     
     // Transition map into bus interior at x: 2, y: 5 (aisle at bottom of bus facing UP)
     setCurrentMap("bus_interior");
@@ -2064,7 +2140,9 @@ export default function GameCanvas({
       setBooksWalkSteps((prev) => {
         const next = prev + 1;
         if (next >= 2) {
-          setPendingBooksWalkCheck(false);
+          queueMicrotask(() => {
+            setPendingBooksWalkCheck(false);
+          });
           setTimeout(() => {
             onTriggerDialogue(
               "CKY",
@@ -2272,6 +2350,8 @@ export default function GameCanvas({
       playSound(330, "sine", 0.4);
     } else if (introStep === 5) {
       setIntroStep(-1);
+      setPlayerPos({ x: 6, y: 3 });
+      setFacing("down");
       playSound(880, "sine", 0.2);
     }
   };
@@ -2660,7 +2740,7 @@ export default function GameCanvas({
     setTotalGameMinutes(1440 + 300);
     setGameTime({ hour: 5, minute: 0 });
     setCurrentMap("bedroom");
-    setPlayerPos({ x: 8, y: 3 });
+    setPlayerPos({ x: 6, y: 3 });
     setFacing("down");
     setCurrentOutfit("pajamas");
     setHasBackpack(false);
@@ -2752,7 +2832,7 @@ export default function GameCanvas({
     setTotalGameMinutes(2880 + 390);
     setGameTime({ hour: 6, minute: 30 });
     setCurrentMap("bedroom");
-    setPlayerPos({ x: 8, y: 3 });
+    setPlayerPos({ x: 6, y: 3 });
     setFacing("down");
     setCurrentOutfit("pajamas");
     setHasGroomed(false);
@@ -2845,7 +2925,7 @@ export default function GameCanvas({
     setTotalGameMinutes(4320 + 360);
     setGameTime({ hour: 6, minute: 0 });
     setCurrentMap("bedroom");
-    setPlayerPos({ x: 8, y: 3 });
+    setPlayerPos({ x: 6, y: 3 });
     setFacing("down");
     setCurrentOutfit("pajamas");
     setHasGroomed(false);
@@ -2950,7 +3030,7 @@ export default function GameCanvas({
     setTotalGameMinutes(5760 + 450);
     setGameTime({ hour: 7, minute: 30 });
     setCurrentMap("bedroom");
-    setPlayerPos({ x: 8, y: 3 });
+    setPlayerPos({ x: 6, y: 3 });
     setFacing("down");
     setCurrentOutfit("pajamas");
     setHasGroomed(false);
@@ -3676,12 +3756,20 @@ export default function GameCanvas({
         y: 3,
         sprite: "👩",
         facing: "left",
-        dialogEs: [
+        dialogEs: currentDay === 2 ? [
+          "¡Buen día CKY! Qué temprano te levantaste hoy para ir a la escuela.",
+          "Espero que te vaya excelente en tus clases. Cuidate mucho en la parada del colectivo.",
+          "¡No te olvides de llevar tu merienda y la botella de agua fresca!"
+        ] : [
           "¡Hola CKY! Espero que ya hayas ordenado tu habitación.",
           "¿Has visto las noticias? Dicen que hay comportamientos extraños en el vecindario.",
           "Por favor, no regreses tarde si decides salir a caminar por la calle."
         ],
-        dialogEn: [
+        dialogEn: currentDay === 2 ? [
+          "Good morning CKY! You woke up so early today for school.",
+          "Have a wonderful day in class. Take care at the bus stop.",
+          "Don't forget to take your snack and fresh water bottle!"
+        ] : [
           "Hello CKY! I hope you already cleaned your bedroom.",
           "Have you seen the news? They say there's strange behavior in the neighborhood.",
           "Please don't come home late if you decide to go out for a walk."
@@ -3737,7 +3825,7 @@ export default function GameCanvas({
         id: "school_director",
         name: language === "es" ? "Director Don Héctor" : "Principal Mr. Héctor",
         x: 4,
-        y: 2,
+        y: 1,
         sprite: "👨‍💼",
         facing: "down",
         dialogEs: [
@@ -3757,9 +3845,9 @@ export default function GameCanvas({
         id: "teacher_math",
         name: language === "es" ? "Profesor de Matemática (Prof. Gómez)" : "Math Teacher",
         x: 3,
-        y: 3,
+        y: 2,
         sprite: "👨‍🏫",
-        facing: "right",
+        facing: "down",
         dialogEs: [
           currentDay === 6 && !day6PossessedSoccerDefeated
             ? "¡CKY! ¡¿Qué hacés acá molestando?! ¡Volvé a tu aula o te repruebo el trimestre!"
@@ -3775,9 +3863,9 @@ export default function GameCanvas({
         id: "teacher_english",
         name: language === "es" ? "Profesora de Inglés (Prof. Laura)" : "English Teacher",
         x: 6,
-        y: 3,
+        y: 2,
         sprite: "👩‍🏫",
-        facing: "left",
+        facing: "down",
         dialogEs: [
           currentDay === 6 && !day6PossessedSoccerDefeated
             ? "¡Qué insoportable esta alumna! Ni un mate en paz se puede tomar..."
@@ -4447,14 +4535,18 @@ export default function GameCanvas({
         sprite: "👻",
         facing: "down",
         dialogEs: [
-          hasDeliveredAngelaSandwich
-            ? "¡Hola CKY! Muchas gracias por el sándwich de salame y queso. Siempre seré tu amiga y guardiana espiritual."
-            : "Hola CKY... estoy esperando el sándwich de salame y queso que me prometiste. Mi tumba es la rosa.",
+          !hasDeliveredAngelaSandwich
+            ? "¡Hola CKY! Estoy esperando el sándwich de salame y queso que me prometiste anoche. Mi tumba es la rosa."
+            : !day2ShadowDefeated
+            ? "¡Cuidado CKY! Esa sombra rencorosa que mandó la vecina anda suelta por las criptas. ¡Vamos a darle una lección!"
+            : "¡Hola amiga CKY! ¡Siempre seré tu guardiana y mejor amiga! El cementerio está purificado, volvé a casa a descansar o darte una buena ducha.",
         ],
         dialogEn: [
-          hasDeliveredAngelaSandwich
-            ? "Hi CKY! Thank you so much for the salami and cheese sandwich. I will always be your spiritual friend and guardian."
-            : "Hi CKY... I'm waiting for the salami and cheese sandwich you promised me. My grave is the pink one.",
+          !hasDeliveredAngelaSandwich
+            ? "Hi CKY! I'm waiting for the salami and cheese sandwich you promised last night. My grave is the pink one."
+            : !day2ShadowDefeated
+            ? "Watch out CKY! That spiteful shadow sent by the neighbor is lurking near the crypts. Let's teach it a lesson!"
+            : "Hi bestie CKY! I will always be your guardian and soul friend! The cemetery is purified, go home to rest or take a nice shower.",
         ]
       });
     } else if (currentMap === "ruins_valley") {
@@ -5710,24 +5802,117 @@ export default function GameCanvas({
               ctx.fill();
             }
 
-            ctx.fillStyle = "#b45309"; // Warm brown wood
-            ctx.fillRect(x + 4, y + 4, TILE_SIZE - 8, TILE_SIZE - 8);
+            // Warm oak wood body
+            ctx.fillStyle = "#92400e";
+            ctx.fillRect(x + 3, y + 4, TILE_SIZE - 6, TILE_SIZE - 7);
+            ctx.fillStyle = "#b45309";
+            ctx.fillRect(x + 4, y + 5, TILE_SIZE - 8, TILE_SIZE - 9);
+            // Tabletop bevel
+            ctx.fillStyle = "#d97706";
+            ctx.fillRect(x + 3, y + 4, TILE_SIZE - 6, 3);
             
             // Drawer lines
             ctx.fillStyle = "#78350f";
-            ctx.fillRect(x + 6, y + 14, TILE_SIZE - 12, 3);
-            ctx.fillRect(x + 6, y + 26, TILE_SIZE - 12, 3);
+            ctx.fillRect(x + 5, y + 14, TILE_SIZE - 10, 2);
+            ctx.fillRect(x + 5, y + 24, TILE_SIZE - 10, 2);
             
-            // Drawer knobs
-            ctx.fillStyle = "#facc15"; // gold knob
-            ctx.fillRect(x + TILE_SIZE / 2 - 2, y + 10, 4, 4);
-            ctx.fillRect(x + TILE_SIZE / 2 - 2, y + 22, 4, 4);
-            
-            // Smartphone on top
-            ctx.fillStyle = "#1e293b"; // glass screen
-            ctx.fillRect(x + 12, y + 6, 8, 12);
-            ctx.fillStyle = "#22c55e"; // glowing power LED indicator
-            ctx.fillRect(x + 15, y + 8, 2, 2);
+            // Golden drawer knobs
+            ctx.fillStyle = "#facc15";
+            ctx.fillRect(x + TILE_SIZE / 2 - 2, y + 10, 4, 3);
+            ctx.fillRect(x + TILE_SIZE / 2 - 2, y + 19, 4, 3);
+            ctx.fillStyle = "#eab308";
+            ctx.fillRect(x + TILE_SIZE / 2 - 1, y + 11, 2, 1);
+            ctx.fillRect(x + TILE_SIZE / 2 - 1, y + 20, 2, 1);
+
+            // 1. Bedside Lamp (Velador) on left side of tabletop
+            // Brass base & stem
+            ctx.fillStyle = "#ca8a04";
+            ctx.fillRect(x + 5, y + 8, 5, 2);
+            ctx.fillRect(x + 7, y + 4, 2, 5);
+            // Lampshade
+            if (isBedsideLampOn) {
+              // Soft warm radial light glow
+              const lampGlow = ctx.createRadialGradient(x + 8, y + 5, 1, x + 8, y + 5, 18);
+              lampGlow.addColorStop(0, "rgba(254, 240, 138, 0.45)");
+              lampGlow.addColorStop(0.5, "rgba(253, 224, 71, 0.15)");
+              lampGlow.addColorStop(1, "rgba(253, 224, 71, 0)");
+              ctx.fillStyle = lampGlow;
+              ctx.beginPath();
+              ctx.arc(x + 8, y + 5, 18, 0, Math.PI * 2);
+              ctx.fill();
+
+              // Glowing yellow shade
+              ctx.fillStyle = "#fef08a";
+              ctx.fillRect(x + 5, y + 2, 6, 4);
+              ctx.fillStyle = "#facc15";
+              ctx.fillRect(x + 4, y + 5, 8, 2);
+            } else {
+              // Muted pink/cream shade (off)
+              ctx.fillStyle = "#f472b6";
+              ctx.fillRect(x + 5, y + 2, 6, 4);
+              ctx.fillStyle = "#db2777";
+              ctx.fillRect(x + 4, y + 5, 8, 2);
+            }
+
+            // 2. Diario Íntimo de CKY (if not yet in inventory)
+            const isDiaryCollected = inventory.some((i) => i.id === "mission_diary" || i.id === "diary");
+            if (!isDiaryCollected) {
+              // Purple book cover resting on the table
+              ctx.fillStyle = "#7c3aed";
+              ctx.fillRect(x + 13, y + 14, 9, 10);
+              // White/cream paper edges
+              ctx.fillStyle = "#fef08a";
+              ctx.fillRect(x + 14, y + 15, 7, 8);
+              // Magenta bookmark ribbon / strap
+              ctx.fillStyle = "#ec4899";
+              ctx.fillRect(x + 12, y + 18, 11, 2);
+              // Golden padlock with keyhole
+              ctx.fillStyle = "#facc15";
+              ctx.fillRect(x + 16, y + 17, 4, 4);
+              ctx.fillStyle = "#854d0e";
+              ctx.fillRect(x + 17, y + 19, 2, 2);
+            }
+
+            // 3. Celular Smartphone (if not in pockets OR currently charging)
+            const isPhoneInPockets = hasPhone || inventory.some((i) => i.id === "pocket_phone" || i.id === "phone");
+            if (!isPhoneInPockets || isPhoneCharging) {
+              // Smartphone body
+              ctx.fillStyle = "#0f172a";
+              ctx.fillRect(x + 20, y + 6, 7, 12);
+              // Screen
+              ctx.fillStyle = isPhoneCharging ? "#052e16" : "#1e293b";
+              ctx.fillRect(x + 21, y + 7, 5, 10);
+
+              if (isPhoneCharging) {
+                // Green charging lightning bolt
+                ctx.fillStyle = "#22c55e";
+                ctx.fillRect(x + 23, y + 9, 2, 3);
+                ctx.fillRect(x + 22, y + 11, 3, 2);
+                // Charging LED indicator
+                ctx.fillStyle = "#4ade80";
+                ctx.fillRect(x + 23, y + 7, 1, 1);
+                // White charging cable curling to back wall
+                ctx.strokeStyle = "#e2e8f0";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(x + 23, y + 18);
+                ctx.lineTo(x + 23, y + 21);
+                ctx.lineTo(x + 28, y + 21);
+                ctx.stroke();
+              } else {
+                // Cyan standby notification dot
+                ctx.fillStyle = "#38bdf8";
+                ctx.fillRect(x + 23, y + 8, 2, 2);
+              }
+            }
+
+            // 4. Subtle floating sparkle if there are items to pick up
+            if ((!isDiaryCollected || (!isPhoneInPockets && !isPhoneCharging)) && currentMap === "bedroom") {
+              const sparkPulse = (Math.sin(Date.now() / 250) + 1) / 2;
+              ctx.fillStyle = `rgba(250, 204, 21, ${0.4 + sparkPulse * 0.5})`;
+              ctx.fillRect(x + 16, y - 2, 2, 2);
+              ctx.fillRect(x + 15, y - 1, 4, 1);
+            }
           } else if (tile === 11) {
             // First, draw wall background
             ctx.fillStyle = currentMap === "limbo" ? "#0f172a" : "#1e293b";
@@ -6590,18 +6775,18 @@ export default function GameCanvas({
             ctx.strokeStyle = "#38bdf8";
             ctx.strokeRect(x + 4, y + 2, 24, 16);
             
-            // Yellow badge for BUS
+            // Yellow badge for School Bus 87
             ctx.fillStyle = "#facc15";
-            ctx.fillRect(x + 6, y + 4, 20, 8);
+            ctx.fillRect(x + 5, y + 4, 22, 8);
             
             ctx.fillStyle = "#0f172a";
             ctx.font = "bold 6px sans-serif";
             ctx.textAlign = "center";
-            ctx.fillText("BUS", x + 16, y + 11);
+            ctx.fillText("BUS 87", x + 16, y + 10.5);
             
             ctx.fillStyle = "#ffffff";
             ctx.font = "bold 5px sans-serif";
-            ctx.fillText("PARADA", x + 16, y + 16);
+            ctx.fillText("ESC. 87", x + 16, y + 16);
           } else if (tile === 61) {
             // Banco de Madera de la Parada
             ctx.fillStyle = "#7c2d12"; // Wood seat
@@ -6657,7 +6842,10 @@ export default function GameCanvas({
             ctx.fillStyle = "#ffffff";
             ctx.font = "bold 6px sans-serif";
             ctx.textAlign = "center";
-            ctx.fillText("ESCOLAR", x + 16, y + 18);
+            ctx.fillText("ESC. 87", x + 16, y + 14);
+            ctx.fillStyle = "#bae6fd";
+            ctx.font = "bold 5px sans-serif";
+            ctx.fillText("L.4 / 87", x + 16, y + 22);
           } else if (tile === 70) {
             // Asiento y Volante del Chofer
             ctx.fillStyle = "#0f172a";
@@ -8886,9 +9074,9 @@ export default function GameCanvas({
         const breath = Math.sin(Date.now() / 800) * 0.08 + 1.0;
         const moonBreath = Math.sin(Date.now() / 1200) * 0.05 + 0.95;
         
-        // A: Warm lamp glow from the bedside table (tile 10 is at col 8, row 6)
+        // A: Warm lamp glow from the bedside table (tile 10 is at col 8, row 5)
         const lampX = 8 * TILE_SIZE + TILE_SIZE / 2;
-        const lampY = 6 * TILE_SIZE + TILE_SIZE / 2 - 8; // slightly above the table surface
+        const lampY = 5 * TILE_SIZE + TILE_SIZE / 2 - 8; // slightly above the table surface
         const lampRadius = (introStep === 2 ? 110 : 80) * breath;
         const lampGlow = ctx.createRadialGradient(lampX, lampY, 3, lampX, lampY, lampRadius);
         lampGlow.addColorStop(0, "rgba(253, 224, 71, 0.55)"); // Soft warm yellow
@@ -9215,16 +9403,19 @@ export default function GameCanvas({
       if (tileVal === 20) return { type: "moms_plant", tx, ty };
       if (tileVal === 2) return { type: "moms_room_exit_door", tx, ty };
     }
-    if (currentMap === "bathroom") {
+    if (currentMap === "bathroom" || currentMap === "bathroom_girls" || currentMap === "bathroom_boys") {
       if (tileVal === 41 || tileVal === 21) return { type: "toilet", tx, ty };
       if (tileVal === 42 || tileVal === 22) return { type: "sink", tx, ty };
       if (tileVal === 43 || tileVal === 23) return { type: "shower", tx, ty };
       if (tileVal === 44 || tileVal === 24) return { type: "towel_rack", tx, ty };
       if (tileVal === 25) return { type: "laundry_hamper", tx, ty };
-      if (tileVal === 34 || tileVal === 2) return { type: "bathroom_exit_door", tx, ty };
+      if (tileVal === 34 || tileVal === 2 || tileVal === 81) return { type: "bathroom_exit_door", tx, ty };
     }
     if (currentMap === "street") {
-      if ((isBusWaitingAtDoor || isGreenBusWaiting) && tx >= 10 && tx <= 16 && ty >= 6 && ty <= 8) return { type: "school_bus", tx, ty };
+      // Yellow School Bus in front of CKY's house (Cols 2 to 7, Rows 6 to 8)
+      if (tx >= 2 && tx <= 7 && ty >= 6 && ty <= 8) return { type: "school_bus", tx, ty };
+      // Green Bus Línea 4 at Bus Stop (Cols 11 to 17, Rows 6 to 8)
+      if (tx >= 11 && tx <= 17 && ty >= 6 && ty <= 8) return { type: "bus_stop_line_4", tx, ty };
       if (tileVal === 65) return { type: "bus_stop_line_4", tx, ty };
       if (tileVal === 62) return { type: "street_lamp", tx, ty };
       if (tileVal === 63) return { type: "street_tree", tx, ty };
@@ -9236,7 +9427,8 @@ export default function GameCanvas({
       if (tileVal === 66 || (tx === 2 && ty === 6)) return { type: "street_bicycle", tx, ty };
     }
     if (currentMap === "cemetery") {
-      if (tileVal === 65) return { type: "bus_stop_line_4", tx, ty };
+      // Green Bus Línea 4 at Cemetery Stop (Cols 1 to 6, Rows 7 to 9) or bus stop sign
+      if ((tx >= 1 && tx <= 6 && ty >= 7 && ty <= 9) || tileVal === 65) return { type: "bus_stop_line_4", tx, ty };
       if (tileVal === 70) return { type: "angela_pink_tomb", tx, ty };
       if (tileVal === 71 || tileVal === 72) return { type: "generic_tomb", tx, ty };
       if (tileVal === 73) return { type: "angel_statue", tx, ty };
@@ -9291,7 +9483,7 @@ export default function GameCanvas({
     if (tileVal === 101) return { type: "school_lockers", tx, ty };
     if (tileVal === 102) return { type: "bulletin_board", tx, ty };
     if (tileVal === 103) return { type: "urinal", tx, ty };
-    if (tileVal === 104) return { type: "courtyard_bench", tx, ty };
+    if (tileVal === 104) return { type: currentMap === "director_office" ? "director_chair" : "courtyard_bench", tx, ty };
     if (tileVal === 33) return { type: "grimoire_shelf", tx, ty };
     if (tileVal === 35) return { type: "photo_vecina", tx, ty };
     if (currentMap === "soulmate_house" && tileVal === 32) return { type: "soulmate_bathroom", tx, ty };
@@ -9440,6 +9632,7 @@ export default function GameCanvas({
         showNameNeighborModal ||
         showUnknownPhoneModal ||
         showShowerChoiceModal ||
+        showDay2ShadowBattleModal ||
         activeDay8Battle !== null ||
         showDay8NeighborClimaxModal ||
         showDay8AlanisModal ||
@@ -9650,9 +9843,14 @@ export default function GameCanvas({
 
     // Solid wall or obstacle block check
     const tile = grid[nextY][nextX];
+    const currentTile = grid[playerPos.y]?.[playerPos.x];
     let isSolid = false;
     if (currentMap === "bedroom") {
-      if (tile !== 0 && tile !== 2) {
+      if (currentTile === 4) {
+        if (tile !== 0 && tile !== 2 && tile !== 4) {
+          isSolid = true;
+        }
+      } else if (tile !== 0 && tile !== 2) {
         isSolid = true;
       }
     } else if (currentMap === "hallway") {
@@ -9689,6 +9887,34 @@ export default function GameCanvas({
       }
     } else if (currentMap === "soulmate_bedroom") {
       if (tile !== 0 && tile !== 2) {
+        isSolid = true;
+      }
+    } else if (currentMap === "school_hallway") {
+      if (tile === 1 || tile === 101 || tile === 102) {
+        isSolid = true;
+      }
+    } else if (currentMap === "school_courtyard") {
+      if (tile === 1 || tile === 98 || tile === 99 || tile === 104) {
+        isSolid = true;
+      }
+    } else if (currentMap.startsWith("classroom_")) {
+      if (tile === 1 || tile === 91 || tile === 92 || tile === 93) {
+        isSolid = true;
+      }
+    } else if (currentMap === "director_office") {
+      if (tile === 1 || tile === 94 || tile === 95 || tile === 104) {
+        isSolid = true;
+      }
+    } else if (currentMap === "teachers_room") {
+      if (tile === 1 || tile === 96 || tile === 97) {
+        isSolid = true;
+      }
+    } else if (currentMap === "bathroom_girls" || currentMap === "bathroom_boys") {
+      if (tile === 1 || tile === 41 || tile === 42 || tile === 44 || tile === 103) {
+        isSolid = true;
+      }
+    } else if (currentMap === "cemetery") {
+      if (tile === 1 || tile === 70 || tile === 71 || tile === 72 || tile === 73 || tile === 74 || tile === 75 || tile === 65) {
         isSolid = true;
       }
     } else {
@@ -9893,6 +10119,16 @@ export default function GameCanvas({
         "Phew, arrived at the Airport running full steam!! So exhausted! Let's find the neighbor at Don Pepe's hot dog stand."
       );
       return;
+    } else if (currentMap === "bus_interior" && (tile === 77 || nextY >= 6)) {
+      transitionToMap("school_courtyard", { x: 3, y: 7 });
+      addXP(15);
+      unlockDiaryEntry("chapter_01_bus");
+      onTriggerDialogue(
+        "Patio de la Escuela Secundaria N° 87",
+        "Descendiste del colectivo escolar en el patio de la escuela secundaria.",
+        "You exited the school bus into the high school courtyard."
+      );
+      return;
     } else {
       checkSchoolMapTransitions(tile, currentMap);
     }
@@ -9999,9 +10235,13 @@ export default function GameCanvas({
   const checkSchoolMapTransitions = (tile: number, map: string) => {
     if (map === "school_courtyard") {
       if (tile === 81) {
-        transitionToMap("school_hallway", { x: 2, y: 7 });
-      } else if (tile === 77 || playerPos.y >= 8) {
+        // Entrance to school hallway: place CKY at (15, 6) in front of the courtyard exit door (80)
+        transitionToMap("school_hallway", { x: 15, y: 6 });
+        setFacing("up");
+        playSound(440, "sine", 0.2);
+      } else if (tile === 77) {
         transitionToMap("street", { x: 3, y: 7 });
+        setFacing("down");
         onTriggerDialogue(
           "Regreso a la Calle",
           "Salís de la escuela y regresás a la calle principal de tu casa.",
@@ -10009,35 +10249,50 @@ export default function GameCanvas({
         );
       }
     } else if (map === "school_hallway") {
-      if (tile === 81) {
+      if (tile === 80 || tile === 81) {
+        // Exit to School Courtyard: door at (7, 0) and (8, 0)
         transitionToMap("school_courtyard", { x: 7, y: 1 });
+        setFacing("down");
+        playSound(440, "sine", 0.2);
       } else if (tile === 82) {
         transitionToMap("classroom_1", { x: 4, y: 6 });
+        setFacing("up");
       } else if (tile === 83) {
         transitionToMap("classroom_2", { x: 4, y: 6 });
+        setFacing("up");
       } else if (tile === 84) {
         transitionToMap("classroom_3", { x: 4, y: 6 });
+        setFacing("up");
       } else if (tile === 85) {
         transitionToMap("classroom_4", { x: 4, y: 6 });
+        setFacing("up");
       } else if (tile === 86) {
         transitionToMap("classroom_5", { x: 4, y: 6 });
+        setFacing("up");
       } else if (tile === 87) {
         transitionToMap("director_office", { x: 4, y: 6 });
+        setFacing("up");
       } else if (tile === 88) {
         transitionToMap("teachers_room", { x: 4, y: 6 });
+        setFacing("up");
       } else if (tile === 89) {
         transitionToMap("bathroom_girls", { x: 3, y: 4 });
+        setFacing("up");
       } else if (tile === 90) {
         transitionToMap("bathroom_boys", { x: 3, y: 4 });
+        setFacing("up");
       } else if (tile === 140) {
         transitionToMap("school_basement", { x: 2, y: 1 });
+        setFacing("right");
       }
     } else if (map === "school_basement") {
       if (tile === 140) {
-        transitionToMap("school_hallway", { x: 16, y: 2 });
+        transitionToMap("school_hallway", { x: 16, y: 5 });
+        setFacing("up");
       } else if (tile === 146) {
         if (day7BasementGeneratorDisabled) {
           transitionToMap("school_laboratory", { x: 6, y: 8 });
+          setFacing("up");
         } else {
           playSound(250, "sawtooth", 0.4);
           onTriggerDialogue(
@@ -10050,6 +10305,7 @@ export default function GameCanvas({
     } else if (map === "school_laboratory") {
       if (tile === 146) {
         transitionToMap("school_basement", { x: 16, y: 6 });
+        setFacing("up");
       }
     } else if (
       map === "classroom_1" ||
@@ -10063,17 +10319,34 @@ export default function GameCanvas({
       map === "bathroom_boys"
     ) {
       if (tile === 81) {
-        let returnX = 2;
-        if (map === "classroom_1") returnX = 1;
-        else if (map === "classroom_2") returnX = 4;
-        else if (map === "classroom_3") returnX = 7;
-        else if (map === "classroom_4") returnX = 10;
-        else if (map === "classroom_5") returnX = 13;
-        else if (map === "director_office") returnX = 16;
-        else if (map === "teachers_room") returnX = 17;
-        else if (map === "bathroom_girls") returnX = 2;
-        else if (map === "bathroom_boys") returnX = 8;
-        transitionToMap("school_hallway", { x: returnX, y: 1 });
+        if (map === "classroom_1") {
+          transitionToMap("school_hallway", { x: 1, y: 1 });
+          setFacing("down");
+        } else if (map === "classroom_2") {
+          transitionToMap("school_hallway", { x: 4, y: 1 });
+          setFacing("down");
+        } else if (map === "classroom_3") {
+          transitionToMap("school_hallway", { x: 7, y: 1 });
+          setFacing("down");
+        } else if (map === "classroom_4") {
+          transitionToMap("school_hallway", { x: 10, y: 1 });
+          setFacing("down");
+        } else if (map === "classroom_5") {
+          transitionToMap("school_hallway", { x: 13, y: 1 });
+          setFacing("down");
+        } else if (map === "director_office") {
+          transitionToMap("school_hallway", { x: 16, y: 1 });
+          setFacing("down");
+        } else if (map === "teachers_room") {
+          transitionToMap("school_hallway", { x: 3, y: 6 });
+          setFacing("up");
+        } else if (map === "bathroom_girls") {
+          transitionToMap("school_hallway", { x: 7, y: 6 });
+          setFacing("up");
+        } else if (map === "bathroom_boys") {
+          transitionToMap("school_hallway", { x: 11, y: 6 });
+          setFacing("up");
+        }
       }
     }
   };
@@ -10189,6 +10462,89 @@ export default function GameCanvas({
                   }
                 );
               }
+            );
+          }
+        );
+      }
+    );
+  };
+
+  const startMathClassSequence = () => {
+    playSound(587.33, "sine", 0.6); // Bell chime 🔔
+    if (currentMap !== "classroom_3") {
+      transitionToMap("classroom_3", { x: 3, y: 3 });
+    } else {
+      setPlayerPos({ x: 3, y: 3 });
+    }
+    setFacing("up");
+    advanceClassStep(2);
+    playSound(400, "triangle", 0.4);
+
+    onTriggerDialogue(
+      "Profesor de Matemática (Prof. Gómez)",
+      "¡Atención 3er Año! Tomen asiento todos. Es hora de la Segunda Hora de Clases: Matemática y Examen Sorpresa. Abran sus carpetas.",
+      "Attention 3rd Year! Take your seats. Time for the Second Class Hour: Math and Pop Quiz. Open your notebooks.",
+      () => {
+        onTriggerDialogue(
+          "Jaz (susurrando)",
+          "¡Ay CKY, menos mal que entramos a tiempo! Dicen que el Profe Gómez está picante hoy con los ejercicios... ¡Lucite!",
+          "Oh CKY, good thing we came in on time! They say Prof. Gomez is in a tough mood today with the exercises... Shine!",
+          () => {
+            onTriggerDialogue(
+              "Profesor de Matemática (Prof. Gómez)",
+              "CKY, te toca resolver la primera prueba en el pizarrón. ¿Lista para demostrar tus conocimientos?",
+              "CKY, it's your turn to solve the first test on the board. Ready to demonstrate your knowledge?",
+              () => {
+                setShowTriviaMinigame(true);
+                addXP(35);
+                handleEarnMoney(200);
+                advanceTime(45);
+                if (onShowNotification) {
+                  onShowNotification({
+                    icon: "📐",
+                    titleEs: "¡Segunda Hora de Clases Iniciada!",
+                    titleEn: "Second Class Hour Started!",
+                    subEs: "Completaste Matemática con el Profesor Gómez (+35 XP, +$200)",
+                    subEn: "Completed Math with Professor Gómez (+35 XP, +$200)",
+                    color: "emerald"
+                  });
+                }
+              }
+            );
+          }
+        );
+      }
+    );
+  };
+
+  const startBiologyClassSequence = () => {
+    playSound(587.33, "sine", 0.6); // Bell chime 🔔
+    if (currentMap !== "classroom_3") {
+      transitionToMap("classroom_3", { x: 3, y: 3 });
+    } else {
+      setPlayerPos({ x: 3, y: 3 });
+    }
+    setFacing("up");
+    advanceClassStep(3);
+    playSound(440, "sine", 0.4);
+
+    onTriggerDialogue(
+      "Profesora de Biología (Prof. Marcela)",
+      "¡Buenos días chicos! Es la Tercera Hora de Clases: Biología Celular y Práctica de Microscopio. Acomódense en sus puestos.",
+      "Good morning class! It's the Third Class Hour: Cellular Biology and Microscope Lab. Settle in at your desks.",
+      () => {
+        advanceTime(45);
+        addXP(40);
+        advanceClassStep(5); // School day finished / dismissal time!
+        onTriggerDialogue(
+          "Reloj Escolar",
+          "⏳ Pasan 45 minutos fascinantes observando núcleos celulares y cloroplastos (+45 min, +40 XP). ¡RINNNG! ¡Suena el timbre final de SALIDA escolar!",
+          "⏳ 45 fascinating minutes pass observing cell nuclei and chloroplasts (+45 min, +40 XP). RINGGG! The final dismissal bell rings!",
+          () => {
+            onTriggerDialogue(
+              "Jaz",
+              "¡Terminó la jornada escolar CKY! Vamos al patio que Don Carlos ya tiene listo el colectivo para regresar a casa.",
+              "School day is over CKY! Let's head to the courtyard, Don Carlos has the bus ready to head back home."
             );
           }
         );
@@ -10673,6 +11029,72 @@ export default function GameCanvas({
     );
   };
 
+  const showNpcDialogueChain = (npc: GameNPC, onComplete?: () => void) => {
+    const linesEs = npc.dialogEs && npc.dialogEs.length > 0 ? npc.dialogEs : ["¡Hola CKY!"];
+    const linesEn = npc.dialogEn && npc.dialogEn.length > 0 ? npc.dialogEn : ["Hello CKY!"];
+    advanceTime(1);
+    let idx = 0;
+    const nextLine = () => {
+      if (idx >= linesEs.length) {
+        if (onComplete) onComplete();
+        return;
+      }
+      const es = linesEs[idx];
+      const en = linesEn[idx] || es;
+      idx++;
+      onTriggerDialogue(npc.name, es, en, () => {
+        nextLine();
+      });
+    };
+    nextLine();
+  };
+
+  const triggerDay7DirectorExpulsionSequence = () => {
+    playSound(220, "sawtooth", 0.5);
+    onTriggerDialogue(
+      "Director Don Héctor (Ojos Púrpuras Sombríos)",
+      "Señorita CKY... tome asiento. Por disposición irrevocable del Comité Vecinal Especial presidido por la distinguida Señora Vecina, queda formalmente EXPULSADA de esta institución escolar por 'conductas perturbadoras del orden'.",
+      "Miss CKY... take a seat. By irrevocable order of the Special Neighborhood Committee presided by our distinguished Neighbor, you are formally EXPELLED from this school for 'disruptive behavior'.",
+      () => {
+        onTriggerDialogue(
+          "CKY (Indignación Total)",
+          "¡¿QUÉEE?! ¡¡Esto es una injusticia total!! ¡La Vecina no tiene ninguna autoridad sobre la escuela! ¡Está usando magia negra del Limbo para lavarles el cerebro a todos ustedes!",
+          "WHAAAT?! This is complete injustice!! The Neighbor has no authority over this school! She's using Limbo black magic to brainwash all of you!",
+          () => {
+            onTriggerDialogue(
+              soulmateInfo?.name || "Alma Gemela",
+              "Che, director, aflojá un poco. Es cualquiera esto. Se nota a leguas que te metieron un parásito en la cabeza para sacarse a CKY de encima.",
+              "Hey, principal, back off. This is total nonsense. It's blatantly obvious they planted a parasite in your head to get rid of CKY.",
+              () => {
+                onTriggerDialogue(
+                  "Director Don Héctor",
+                  "¡Silencio! No toleraré insolencias. La resolución es definitiva. Retírense de inmediato del establecimiento escolar o llamaré a la policía.",
+                  "Silence! I will not tolerate insolence. The ruling is final. Leave the school premises immediately or I will call the police.",
+                  () => {
+                    onTriggerDialogue(
+                      "Ángela (Espíritu)",
+                      "¡Vamos a salir de acá ya mismo CKY! Siento una turbulencia brutal en el edificio... ¡algo muy podrido se está cociendo en la parte de abajo de la escuela!",
+                      "Let's get out of here right now CKY! I feel a brutal turbulence in the building... something rotten is brewing in the basement!",
+                      () => {
+                        setDay7DirectorExpulsionDone(true);
+                        setDay7BasementDiscovered(true);
+                        localStorage.setItem("cky_day7_director_expulsion_done", "true");
+                        localStorage.setItem("cky_day7_basement_discovered", "true");
+                        addXP(50);
+                        playSound(600, "sine", 0.4);
+                        unlockDiaryEntry("chapter_07_injustice");
+                      }
+                    );
+                  }
+                );
+              }
+            );
+          }
+        );
+      }
+    );
+  };
+
   const performInteraction = (pos: Position = playerPos, face: Direction = facing) => {
     const target = getActionTarget(pos, face);
     if (!target) return;
@@ -10870,8 +11292,36 @@ export default function GameCanvas({
     if (target.type === "closet") { setShowWardrobeModal(true); return; }
     if (target.type === "bed") { setShowBedModal(true); return; }
     if (target.type === "shower") { setShowShowerModal(true); return; }
-    if (target.type === "toilet") { setShowToiletModal(true); return; }
-    if (target.type === "sink") { setShowSinkModal(true); return; }
+    if (target.type === "toilet") {
+      if (currentMap === "bathroom_girls" || currentMap === "bathroom_boys") {
+        soundEngine.playSfx("interact");
+        advanceTime(3);
+        playSound(280, "triangle", 0.4);
+        onTriggerDialogue(
+          "Sanitario del Baño Escolar",
+          "Entrás al cubículo privado, cerrás la traba y usás el baño sanitizado (+15% Higiene, +3 min).",
+          "You enter the private stall, lock it, and use the clean restroom (+15% Hygiene, +3 min)."
+        );
+        return;
+      }
+      setShowToiletModal(true);
+      return;
+    }
+    if (target.type === "sink") {
+      if (currentMap === "bathroom_girls" || currentMap === "bathroom_boys") {
+        soundEngine.playSfx("interact");
+        advanceTime(2);
+        playSound(440, "sine", 0.3);
+        onTriggerDialogue(
+          "Lavatorio del Baño Escolar",
+          "Abrís la canilla cromada y te lavás las manos y la cara con agua fresca y jabón antibacterial (+10% Higiene, +2 min).",
+          "You open the chrome tap and wash your hands and face with fresh water and soap (+10% Hygiene, +2 min)."
+        );
+        return;
+      }
+      setShowSinkModal(true);
+      return;
+    }
     if (target.type === "kitchen_fridge") { setShowFridgeModal(true); return; }
     if (target.type === "kitchen_sink") { setShowKitchenSinkModal(true); return; }
     if (target.type === "mueble_utiles_1") { setShowOrganizerModal1(true); return; }
@@ -11111,6 +11561,17 @@ export default function GameCanvas({
       return;
     }
     if (target.type === "towel_rack") {
+      if (currentMap === "bathroom_girls" || currentMap === "bathroom_boys") {
+        soundEngine.playSfx("interact");
+        advanceTime(2);
+        playSound(520, "sine", 0.3);
+        onTriggerDialogue(
+          "Espejo del Baño Escolar",
+          "Te mirás en el gran espejo de pared, te acomodás el flequillo y ajustás tu uniforme escolar (+5% Presencia, +2 min).",
+          "You look in the big wall mirror, fix your hair and adjust your school uniform (+5% Presence, +2 min)."
+        );
+        return;
+      }
       setShowTowelModal(true);
       return;
     }
@@ -11183,12 +11644,67 @@ export default function GameCanvas({
     if (target.type === "kitchen_fireplace") { setShowKitchenFireplaceModal(true); return; }
 
     // 10 Features Interaction Handlers
-    if (target.type === "blackboard" || target.type === "teacher_desk") {
+    if (target.type === "blackboard") {
       soundEngine.playSfx("dialogue");
+      advanceTime(2);
       onTriggerDialogue(
         "Pizarrón Escolar",
-        "📚 ¿Querés poner a prueba tus conocimientos en la Trivia Escolar de Preguntas y Respuestas (+XP y Recompensas)?",
-        "📚 Do you want to test your knowledge in the School Trivia Quiz (+XP and Rewards)?",
+        "📚 El pizarrón verde tiene anotados los temas principales de la lección del día. ¿Querés poner a prueba tus conocimientos en la Trivia Escolar de Preguntas y Respuestas (+XP y Recompensas)?",
+        "📚 The green chalkboard displays the day's study topics. Do you want to test your knowledge in the School Trivia Quiz (+XP and Rewards)?",
+        () => {
+          setShowTriviaMinigame(true);
+        }
+      );
+      return;
+    }
+
+    if (target.type === "teacher_desk") {
+      soundEngine.playSfx("dialogue");
+      advanceTime(2);
+      if (currentMap === "classroom_3") {
+        if (classStep === 0) {
+          onTriggerDialogue(
+            "Profesor de Historia (Prof. Silva)",
+            "¡Silencio en la clase! Abran los libros de Historia en la página 45. CKY, sentate en tu pupitre para comenzar.",
+            "Quiet in class! Open History books to page 45. CKY, take your seat to begin.",
+            () => {
+              onTriggerDialogue(
+                "Clase de Historia",
+                "¿Deseas sentarte en tu pupitre y comenzar la Clase de Historia?",
+                "Do you want to sit at your desk and start History Class?",
+                () => {
+                  startHistoryClassSequence();
+                }
+              );
+            }
+          );
+          return;
+        } else if (classStep === 1) {
+          onTriggerDialogue(
+            "Profesor de Matemática (Prof. Gómez)",
+            "¡Hola CKY! Es hora de iniciar la Segunda Hora de Clases de Matemática. ¿Deseas sentarte en tu pupitre y comenzar?",
+            "Hi CKY! Time to start the Second Class Hour of Math. Do you want to sit at your desk and begin?",
+            () => {
+              startMathClassSequence();
+            }
+          );
+          return;
+        } else if (classStep === 2) {
+          onTriggerDialogue(
+            "Profesora de Biología (Prof. Marcela)",
+            "¡Hola CKY! Es hora de iniciar la Tercera Hora de Biología. ¿Deseas sentarte en tu pupitre y comenzar?",
+            "Hi CKY! Time to start the Third Class Hour of Biology. Do you want to sit at your desk and begin?",
+            () => {
+              startBiologyClassSequence();
+            }
+          );
+          return;
+        }
+      }
+      onTriggerDialogue(
+        "Escritorio del Docente",
+        "📚 Sobre el escritorio hay carpetas de exámenes, tizas, borrador y la planilla de asistencia. ¿Querés poner a prueba tus conocimientos en la Trivia Escolar (+XP)?",
+        "📚 On the teacher desk there are exams, chalk, and attendance logs. Test your knowledge in the School Trivia (+XP)?",
         () => {
           setShowTriviaMinigame(true);
         }
@@ -11426,17 +11942,320 @@ export default function GameCanvas({
     // Courtyard Soccer Minigame (Penalties with Mateo / Ball / Goal)
     if (
       currentMap === "school_courtyard" &&
-      (target.type === "soccer_ball" || target.type === "soccer_goal" || (target.type === "npc" && (target.npc.id === "mateo_soccer" || target.npc.id === "class_mateo")))
+      (target.type === "soccer_ball" || target.type === "soccer_goal")
     ) {
       playSound(320, "sine", 0.2);
       onTriggerDialogue(
-        "Mateo (Compañero de Escuela)",
-        "¡Ey CKY! ¿Querés patear unos penales? ¡A ver si me clavás un bombazo al ángulo o te atajo todo!",
-        "Hey CKY! Want to kick some penalties? Let's see if you can nail a screamer in the top corner or if I save everything!",
+        "Arco y Pelota de Fútbol",
+        "La pelota blanca y negra está lista frente al arco del patio escolar. ¿Querés patear unos penales con Mateo?",
+        "The soccer ball is ready in front of the school goal. Want to take penalties against Mateo?",
         () => {
           setShowSoccerMinigame(true);
         }
       );
+      return;
+    }
+
+    // Cemetery Angela & Tomb Interaction Logic (Day 2)
+    const handleAngelaCemeteryEncounter = () => {
+      soundEngine.playSfx("interact");
+      advanceTime(5);
+
+      const hasSandwichItem = inventory.some(
+        i => i.id === "sandwich_salame_queso" || i.id === "salame_sandwich" || i.id === "sandwich_salame"
+      );
+
+      if (!hasDeliveredAngelaSandwich) {
+        if (hasSandwichItem) {
+          setHasDeliveredAngelaSandwich(true);
+          localStorage.setItem("cky_angela_sandwich_delivered", "true");
+          removeInventoryItem?.("sandwich_salame_queso");
+          removeInventoryItem?.("salame_sandwich");
+          removeInventoryItem?.("sandwich_salame");
+          addXP(50);
+          unlockDiaryEntry("chapter_02_angela_friend");
+          playSound(650, "sine", 0.5);
+
+          onTriggerDialogue(
+            "Ángela (Espíritu de la Tumba Rosa)",
+            "¡¡¡Hola CKY!!! ¡Cumpliste tu promesa! ¡Mmmm, qué ricura de sándwich de salame y queso! ¡Ya me caías bien por chat pero ahora sos mi mejor amiga oficial del más allá! (+50 XP)",
+            "Hello CKY!!! You kept your promise! Mmmm, delicious salami and cheese sandwich! We are now official best friends from beyond! (+50 XP)",
+            () => {
+              onTriggerDialogue(
+                "CKY",
+                "¡De nada Ángela! Me alegra que te guste. Tu tumba rosa es hermosa.",
+                "You're welcome Angela! Glad you like it. Your pink grave is beautiful.",
+                () => {
+                  unlockDiaryEntry("chapter_02_neighbor_conspiracy");
+                  onTriggerDialogue(
+                    "Ángela (Espíritu)",
+                    "¡Escuchame con atención, amiga! Esa vecina rubia que tenés al lado tuyo finge ser amable regando sus plantitas, pero es quien abre las grietas hacia el Limbo y domina a las sombras... ¡Y hablando de sombras, CUIDADO!",
+                    "Listen closely, bestie! That blonde neighbor of yours pretends to be nice watering plants, but she's the one opening Limbo rifts... Speaking of shadows, WATCH OUT!",
+                    () => {
+                      playSound(220, "sawtooth", 0.6);
+                      onTriggerDialogue(
+                        "Sombra Rencorosa del Limbo",
+                        "¡¡¡SSSHHH... CKY HEREDERA... NO DEJARÉ QUE ESTABLEZCAS VÍNCULOS EN ESTE CEMENTERIO...!!!",
+                        "SSSHHH... CKY HEIR... I WILL NOT LET YOU FORGE BONDS IN THIS CEMETERY...!!!",
+                        () => {
+                          onTriggerDialogue(
+                            "Ángela (Espíritu)",
+                            "¡¡A este adefesio de humo lo desintegramos juntas!! ¡Equipo en guardia, CKY!",
+                            "We're taking this smoke monster down together!! Team to arms, CKY!",
+                            () => {
+                              setShowDay2ShadowBattleModal(true);
+                            }
+                          );
+                        }
+                      );
+                    }
+                  );
+                }
+              );
+            }
+          );
+          return;
+        } else {
+          onTriggerDialogue(
+            "Ángela (Espíritu de la Tumba Rosa)",
+            "¡Hola CKY! Estoy esperando el sándwich de salame y queso que me prometiste anoche en el chat del celular. ¡Búscalo en la heladera de tu casa y traémelo a mi tumba rosa!",
+            "Hi CKY! I'm waiting for the salami and cheese sandwich you promised last night in the phone chat. Look for it in your kitchen fridge and bring it to my pink grave!"
+          );
+          return;
+        }
+      }
+
+      if (!day2ShadowDefeated) {
+        onTriggerDialogue(
+          "Ángela (Espíritu)",
+          "¡Esa Sombra Rencorosa del Limbo sigue acechando entre las criptas del cementerio! ¡Vamos a darle una lección juntas!",
+          "That Spiteful Limbo Shadow is still lurking near the crypts! Let's fight together!",
+          () => {
+            setShowDay2ShadowBattleModal(true);
+          }
+        );
+        return;
+      }
+
+      onTriggerDialogue(
+        "Ángela (Espíritu y Mejor Amiga)",
+        "¡Hola amiga CKY! El cementerio ya está purificado gracias a nosotras. Volvamos a tu casa en el colectivo 4 que estás llena de polvo de criptas... ¡te hace falta una buena ducha en el baño!",
+        "Hi bestie CKY! The cemetery is purified thanks to us. Let's return home on bus 4, you're covered in crypt dust... you need a good shower in the bathroom!"
+      );
+    };
+
+    // ==========================================
+    // ALL NPC INTERACTION HANDLERS
+    // ==========================================
+    if (target.type === "npc" && target.npc) {
+      const npc = target.npc;
+      soundEngine.playSfx("dialogue");
+
+      // Day 2: Angela in Cemetery
+      if (npc.id === "angela_spirit") {
+        handleAngelaCemeteryEncounter();
+        return;
+      }
+
+      // Day 3: School Thief Shadow in hallway
+      if (currentDay === 3 && npc.id === "day3_school_thief_shadow" && !day3SchoolThiefDefeated) {
+        playSound(260, "sawtooth", 0.5);
+        onTriggerDialogue(
+          "Sombra Hurtadora del Limbo",
+          "¡Ssssshh! ¡Tus recuerdos escolares y los de tus compañeros alimentan el poder de la Ama!",
+          "Ssshh! Your school memories feed the Mistress's power!",
+          () => {
+            onTriggerDialogue(
+              "CKY",
+              "¡Devolvé los útiles y las memorias de mis amigos, espectro ladrón! ¡W, Ángela, a la ofensiva!",
+              "Return my friends' supplies and memories, thief specter! W, Angela, to the offensive!",
+              () => {
+                onTriggerDialogue(
+                  "Ángela (Espíritu)",
+                  "¡Toma esto, sombra de pacotilla! ¡CKY, canalizá la luz del linaje ancestral!",
+                  "Take this, cheap shadow! CKY, channel the ancestral lineage light!",
+                  () => {
+                    soundEngine.playSfx("critical");
+                    setDay3SchoolThiefDefeated(true);
+                    localStorage.setItem("cky_day3_school_thief_defeated", "true");
+                    addXP(100);
+                    playSound(650, "sine", 0.5);
+                    onTriggerDialogue(
+                      "Purificación Exitosa",
+                      "✨ ¡La Sombra Hurtadora del Limbo se disolvió en chispas de luz! Recuperaste los cuadernos y borradores perdidos (+100 XP).",
+                      "✨ The Limbo Thief Shadow dissolved in light sparks! You recovered the missing notebooks (+100 XP)."
+                    );
+                  }
+                );
+              }
+            );
+          }
+        );
+        return;
+      }
+
+      // School Director Don Héctor
+      if (npc.id === "school_director") {
+        if (currentDay === 7) {
+          if (!day7DirectorExpulsionDone) {
+            triggerDay7DirectorExpulsionSequence();
+            return;
+          } else {
+            onTriggerDialogue(
+              "Director Don Héctor (Bajo Posesión)",
+              "¡Ya le he notificado su expulsión! Retírese del establecimiento escolar.",
+              "I have already notified you of your expulsion! Leave the school premises."
+            );
+            return;
+          }
+        }
+        showNpcDialogueChain(npc);
+        return;
+      }
+
+      // Teacher History (Prof. Silva) in Classroom 3
+      if (npc.id === "teacher_history") {
+        if (classStep === 0) {
+          onTriggerDialogue(
+            npc.name,
+            "¡Silencio en la clase! Abran los libros de Historia en la página 45. CKY, tomá asiento en tu pupitre para comenzar.",
+            "Quiet in class! Open History books to page 45. CKY, take your seat to begin.",
+            () => {
+              onTriggerDialogue(
+                "Clase de Historia",
+                "¿Deseas sentarte en tu pupitre y comenzar la Clase de Historia?",
+                "Do you want to sit at your desk and start History Class?",
+                () => {
+                  startHistoryClassSequence();
+                }
+              );
+            }
+          );
+          return;
+        }
+        showNpcDialogueChain(npc);
+        return;
+      }
+
+      // Teacher Math (Prof. Gómez) in Classroom 3
+      if (npc.id === "teacher_math") {
+        if (classStep === 1) {
+          onTriggerDialogue(
+            npc.name,
+            "¡Hola CKY! Es hora de iniciar la Segunda Hora de Clases de Matemática. Tomá asiento en tu pupitre para comenzar.",
+            "Hi CKY! Time to start the Second Class Hour of Math. Take your seat to begin.",
+            () => {
+              startMathClassSequence();
+            }
+          );
+          return;
+        }
+        showNpcDialogueChain(npc);
+        return;
+      }
+
+      // Teacher Biology (Prof. Marcela) in Classroom 3
+      if (npc.id === "teacher_biology") {
+        if (classStep === 2) {
+          onTriggerDialogue(
+            npc.name,
+            "¡Hola CKY! Es hora de iniciar la Tercera Hora de Biología. Tomá asiento en tu pupitre para comenzar.",
+            "Hi CKY! Time to start the Third Class Hour of Biology. Take your seat to begin.",
+            () => {
+              startBiologyClassSequence();
+            }
+          );
+          return;
+        }
+        showNpcDialogueChain(npc);
+        return;
+      }
+
+      // Jaz in Classroom 3
+      if (npc.id === "class_jaz" && currentMap === "classroom_3") {
+        if (classStep === 0) {
+          const jazGreeting = !hasGroomed
+            ? "¡Amigaaaa! Te quiero mucho pero... ¡¿qué le pasó a tu pelo?! Jajaja ¡parece que te agarró un tornado dormida! ¡Tomá, te presto mi peine!"
+            : "¡Sentate al lado mío en el pupitre, CKY! Sos mi mejor amiga del mundo mundial.";
+          const jazGreetingEn = !hasGroomed
+            ? "Bestieee! I love you but... what happened to your hair?! Hahaha like a tornado hit you while sleeping! Take my comb!"
+            : "Sit next to me at the desk, CKY! You're my best friend in the whole world.";
+          onTriggerDialogue(
+            npc.name,
+            jazGreeting,
+            jazGreetingEn,
+            () => {
+              onTriggerDialogue(
+                "Jaz",
+                "¿Empezamos la clase de Historia con el Prof. Silva?",
+                "Shall we start History class with Prof. Silva?",
+                () => {
+                  startHistoryClassSequence();
+                }
+              );
+            }
+          );
+          return;
+        } else if (classStep === 1) {
+          onTriggerDialogue(
+            "Jaz",
+            "¡CKY! Ya está por arrancar la 2da hora con el Profe Gómez (Matemática). ¿Nos sentamos en los pupitres a rendir el examen?",
+            "CKY! 2nd hour with Prof. Gomez (Math) is about to start. Shall we sit at our desks to take the quiz?",
+            () => {
+              startMathClassSequence();
+            }
+          );
+          return;
+        } else if (classStep === 2) {
+          onTriggerDialogue(
+            "Jaz",
+            "¡CKY! Ahora viene Biología con la Profe Marcela. ¿Nos sentamos para observar el microscopio?",
+            "CKY! Now comes Biology with Prof. Marcela. Shall we sit down to look at the microscope?",
+            () => {
+              startBiologyClassSequence();
+            }
+          );
+          return;
+        }
+      }
+
+      // Mateo in Courtyard
+      if (currentMap === "school_courtyard" && (npc.id === "mateo_soccer" || npc.id === "class_mateo")) {
+        if (classStep === 1) {
+          onTriggerDialogue(
+            npc.name,
+            "¡Ey CKY! ¿Querés patear unos penales acá en la cancha o preferís que volvamos al aula para la 2da Hora de Clases (Matemática con el Profe Gómez)?",
+            "Hey CKY! Want to kick penalties here on the field or would you rather return to class for the 2nd Hour (Math with Prof. Gómez)?",
+            () => {
+              onTriggerDialogue(
+                "Recreo Escolar",
+                "Elegí qué actividad escolar realizar:",
+                "Choose which school activity to do:",
+                () => {
+                  startMathClassSequence();
+                }
+              );
+            }
+          );
+          return;
+        }
+        if (hasFirstClassFinished) {
+          onTriggerDialogue(
+            npc.name,
+            "¡Ey CKY! ¿Querés patear unos penales? ¡A ver si me clavás un bombazo al ángulo o te atajo todo!",
+            "Hey CKY! Want to kick some penalties? Let's see if you can nail a screamer in the top corner or if I save everything!",
+            () => {
+              setShowSoccerMinigame(true);
+            }
+          );
+          return;
+        }
+        showNpcDialogueChain(npc);
+        return;
+      }
+
+      // Default handler for all other NPCs (Preceptora, Teachers, Classmates, etc.)
+      showNpcDialogueChain(npc);
       return;
     }
 
@@ -11447,49 +12266,7 @@ export default function GameCanvas({
     // Day 7: Director's Office - Expulsion by the Neighbor
     if (currentDay === 7 && currentMap === "director_office") {
       if (!day7DirectorExpulsionDone) {
-        playSound(220, "sawtooth", 0.5);
-        onTriggerDialogue(
-          "Director Don Héctor (Ojos Púrpuras Sombríos)",
-          "Señorita CKY... tome asiento. Por disposición irrevocable del Comité Vecinal Especial presidido por la distinguida Señora Vecina, queda formalmente EXPULSADA de esta institución escolar por 'conductas perturbadoras del orden'.",
-          "Miss CKY... take a seat. By irrevocable order of the Special Neighborhood Committee presided by our distinguished Neighbor, you are formally EXPELLED from this school for 'disruptive behavior'.",
-          () => {
-            onTriggerDialogue(
-              "CKY (Indignación Total)",
-              "¡¿QUÉEE?! ¡¡Esto es una injusticia total!! ¡La Vecina no tiene ninguna autoridad sobre la escuela! ¡Está usando magia negra del Limbo para lavarles el cerebro a todos ustedes!",
-              "WHAAAT?! This is complete injustice!! The Neighbor has no authority over this school! She's using Limbo black magic to brainwash all of you!",
-              () => {
-                onTriggerDialogue(
-                  soulmateInfo?.name || "Alma Gemela",
-                  "Che, director, aflojá un poco. Es cualquiera esto. Se nota a leguas que te metieron un parásito en la cabeza para sacarse a CKY de encima.",
-                  "Hey, principal, back off. This is total nonsense. It's blatantly obvious they planted a parasite in your head to get rid of CKY.",
-                  () => {
-                    onTriggerDialogue(
-                      "Director Don Héctor",
-                      "¡Silencio! No toleraré insolencias. La resolución es definitiva. Retírense de inmediato del establecimiento escolar o llamaré a la policía.",
-                      "Silence! I will not tolerate insolence. The ruling is final. Leave the school premises immediately or I will call the police.",
-                      () => {
-                        onTriggerDialogue(
-                          "Ángela (Espíritu)",
-                          "¡Vamos a salir de acá ya mismo CKY! Siento una turbulencia brutal en el edificio... ¡algo muy podrido se está cociendo en la parte de abajo de la escuela!",
-                          "Let's get out of here right now CKY! I feel a brutal turbulence in the building... something rotten is brewing in the basement!",
-                          () => {
-                            setDay7DirectorExpulsionDone(true);
-                            setDay7BasementDiscovered(true);
-                            localStorage.setItem("cky_day7_director_expulsion_done", "true");
-                            localStorage.setItem("cky_day7_basement_discovered", "true");
-                            addXP(50);
-                            playSound(600, "sine", 0.4);
-                            unlockDiaryEntry("chapter_07_injustice");
-                          }
-                        );
-                      }
-                    );
-                  }
-                );
-              }
-            );
-          }
-        );
+        triggerDay7DirectorExpulsionSequence();
         return;
       } else {
         onTriggerDialogue(
@@ -11748,17 +12525,63 @@ export default function GameCanvas({
       return;
     }
 
-    // Day 8: Boss Interactions in 4 locations
-    if (currentDay === 8 && currentMap === "plaza_principal" && (target.type === "plaza_fountain_boss" || (pos.x >= 6 && pos.x <= 9 && pos.y >= 3 && pos.y <= 6))) {
-      if (!day8PlazaDefended) {
-        setActiveDay8Battle("plaza");
-      } else {
-        onTriggerDialogue(
-          "Fuente de la Plaza Principal",
-          "El agua fluye pura y cristalina. El Coloso Sombrío del Parque fue destruido y la plaza está a salvo.",
-          "The water flows pure and crystal clear. The Shadow Park Colossus was destroyed and the plaza is safe."
-        );
+    // Plaza Principal Fountain (Boss in Day 8, Wishing fountain in Days 1-7)
+    if (currentMap === "plaza_principal" && (target.type === "plaza_fountain_boss" || (pos.x >= 6 && pos.x <= 9 && pos.y >= 3 && pos.y <= 6))) {
+      if (currentDay === 8) {
+        if (!day8PlazaDefended) {
+          setActiveDay8Battle("plaza");
+        } else {
+          onTriggerDialogue(
+            "Fuente de la Plaza Principal",
+            "El agua fluye pura y cristalina. El Coloso Sombrío del Parque fue destruido y la plaza está a salvo.",
+            "The water flows pure and crystal clear. The Shadow Park Colossus was destroyed and the plaza is safe."
+          );
+        }
+        return;
       }
+
+      // Days 1-7: Central Wishing Fountain & Notice Board Quest
+      soundEngine.playSfx("coin");
+      const completedBoardQuests: string[] = (() => {
+        try {
+          const stored = localStorage.getItem("cky_completed_board_quests");
+          return stored ? JSON.parse(stored) : [];
+        } catch {
+          return [];
+        }
+      })();
+
+      if (!completedBoardQuests.includes("quest_fountain_wishes")) {
+        const next = [...completedBoardQuests, "quest_fountain_wishes"];
+        try {
+          localStorage.setItem("cky_completed_board_quests", JSON.stringify(next));
+        } catch {}
+        soundEngine.playSfx("fanfare");
+        addXP(45);
+        handleEarnMoney(400);
+        if (onShowNotification) {
+          onShowNotification({
+            icon: "⛲",
+            titleEs: "¡Misión Cumplida: Limpieza de la Fuente de los Deseos!",
+            titleEn: "Quest Completed: Wishing Fountain Restoration!",
+            subEs: "Arrojaste una moneda y purificaste las aguas (+45 XP, +$400)",
+            subEn: "Tossed a wish coin and purified the waters (+45 XP, +$400)",
+            color: "emerald"
+          });
+        }
+        onTriggerDialogue(
+          "⛲ Fuente de los Deseos de la Plaza Principal",
+          "🪙 ¡Plop! Arrojaste una moneda con buenos deseos a la fuente central. Las aguas brillan con destellos celestes y dorados. ¡Completaste el recado del tablón (+45 XP, +$400)!",
+          "🪙 Plop! You tossed a wish coin into the fountain. The waters glow with sky-blue and golden sparkles. Notice board quest complete (+45 XP, +$400)!"
+        );
+        return;
+      }
+
+      onTriggerDialogue(
+        "Fuente de la Plaza Principal",
+        "La fuente central borbotea agua cristalina. Al fondo brillan monedas arrojadas por los vecinos (+5 min).",
+        "The central fountain bubbles with crystal clear water. Coins shine at the bottom (+5 min)."
+      );
       return;
     }
 
@@ -11929,6 +12752,45 @@ export default function GameCanvas({
     // Airport Terminal: Panchería Don Pepe (When race bet is not pending)
     if (currentMap === "airport_terminal" && (target.type === "airport_hotdog_stand" || target.npc?.id === "don_pepe_hotdogs" || (pos.x >= 2 && pos.x <= 6 && pos.y >= 5 && pos.y <= 7))) {
       soundEngine.playSfx("dialogue");
+
+      const completedBoardQuests: string[] = (() => {
+        try {
+          const stored = localStorage.getItem("cky_completed_board_quests");
+          return stored ? JSON.parse(stored) : [];
+        } catch {
+          return [];
+        }
+      })();
+
+      if (!completedBoardQuests.includes("quest_don_pepe_mustard")) {
+        const next = [...completedBoardQuests, "quest_don_pepe_mustard"];
+        try {
+          localStorage.setItem("cky_completed_board_quests", JSON.stringify(next));
+        } catch {}
+        soundEngine.playSfx("fanfare");
+        addXP(50);
+        handleEarnMoney(500);
+        if (onShowNotification) {
+          onShowNotification({
+            icon: "🌭",
+            titleEs: "¡Misión Cumplida: Salsa Secreta para los Panchos!",
+            titleEn: "Quest Completed: Secret Sauce for Hot Dogs!",
+            subEs: "Ayudaste a Don Pepe con la provisión (+50 XP, +$500)",
+            subEn: "Helped Don Pepe with the supply order (+50 XP, +$500)",
+            color: "emerald"
+          });
+        }
+        onTriggerDialogue(
+          "🌭 Panchería Don Pepe",
+          "¡Hola CKY! ¡Muchísimas gracias por darme una mano con el pedido de la mostaza especial de la colonia! Acá tenés tu recompensa del tablón: +$500 y +50 XP.",
+          "Hi CKY! Thank you so much for helping with the special mustard order! Here is your reward: +$500 and +50 XP.",
+          () => {
+            setActiveShopType("don_pepe");
+          }
+        );
+        return;
+      }
+
       setActiveShopType("don_pepe");
       return;
     }
@@ -12083,15 +12945,7 @@ export default function GameCanvas({
 
     // Cemetery Interactions
     if (target.type === "angela_pink_tomb") {
-      soundEngine.playSfx("interact");
-      advanceTime(5);
-      addXP(20);
-      playSound(520, "sine", 0.4);
-      onTriggerDialogue(
-        "Tumba de Ángela (Flores y Lazos Rosas)",
-        "La tumba de Ángela está adornada con flores frescas y lazos rosas. Se siente una presencia cálida y protectora a tu lado (+20 XP).",
-        "Angela's tomb is decorated with fresh flowers and pink ribbons. A warm protective presence surrounds you (+20 XP)."
-      );
+      handleAngelaCemeteryEncounter();
       return;
     }
     if (target.type === "generic_tomb") {
@@ -12144,8 +12998,24 @@ export default function GameCanvas({
       soundEngine.playSfx("dialogue");
       onTriggerDialogue(
         "Chofer Don Carlos",
-        "¡Hola CKY! 'No distraigas al chofer mientras el bondi está en marcha. Agarrate del pasamanos o sentate en un asiento libre.'",
-        "Driver Don Carlos: 'Hey CKY! Don't distract the driver while the bus is moving. Grab a seat or hold tight!'"
+        "¡Hola CKY! Sentate en el asiento 6 para viajar a la escuela o tocá la puerta trasera para descender al patio.",
+        "Driver Don Carlos: 'Hey CKY! Take seat 6 to ride to school, or touch the rear door to step into the courtyard.'"
+      );
+      return;
+    }
+    if (target.type === "bus_seat_6") {
+      soundEngine.playSfx("interact");
+      advanceTime(10);
+      playSound(520, "triangle", 0.4);
+      addXP(25);
+      unlockDiaryEntry("chapter_01_bus");
+      onTriggerDialogue(
+        "Chofer Don Carlos",
+        "🚌 ¡Arrancamos rumbo a la Escuela Secundaria N° 87! ¡Acomódense chicos que salimos!... (10 minutos después)... ¡Llegamos a la escuela! ¡A descender todos al patio!",
+        "🚌 Heading to High School No. 87! Settle down kids!... (10 minutes later)... We have arrived at the school! Everyone exit to the courtyard!",
+        () => {
+          transitionToMap("school_courtyard", { x: 3, y: 7 });
+        }
       );
       return;
     }
@@ -12154,41 +13024,132 @@ export default function GameCanvas({
       advanceTime(5);
       playSound(440, "sine", 0.3);
       onTriggerDialogue(
-        "Asiento del Colectivo Línea 4",
-        "Te sentás cómodamente junto a la ventanilla mirando las calles pasar (+5 min, +10% Energía).",
-        "You sit comfortably by the window watching the streets pass (+5 min, +10% Energy)."
+        "Asiento del Colectivo",
+        "Te sentás cómodamente junto a la ventanilla mirando las calles pasar (+5 min, +10% Energía). Tu asiento asignado es el 6.",
+        "You sit comfortably watching the streets pass (+5 min, +10% Energy). Your assigned seat is #6."
       );
       return;
     }
     if (target.type === "bus_exit_door") {
       soundEngine.playSfx("door");
-      setShowBusStopModal(true);
+      onTriggerDialogue(
+        "Puerta de Descenso",
+        "¿Deseas descender en el patio de la Escuela Secundaria N° 87?",
+        "Do you want to exit into the High School courtyard?",
+        () => {
+          advanceTime(5);
+          addXP(15);
+          unlockDiaryEntry("chapter_01_bus");
+          transitionToMap("school_courtyard", { x: 3, y: 7 });
+        }
+      );
       return;
     }
 
     // School Objects Interactions
     if (target.type === "school_desk") {
       soundEngine.playSfx("interact");
-      advanceTime(5);
+      advanceTime(2);
       playSound(380, "triangle", 0.3);
+
+      if (currentMap === "classroom_3") {
+        // CKY's Desk is at (3, 3)
+        if (target.tx === 3 && target.ty === 3) {
+          if (classStep === 0) {
+            onTriggerDialogue(
+              "Tu Pupitre Escolar",
+              "Tu banco de madera junto a Jaz. En una esquina hay un corazón dibujado con corrector. ¿Deseas sentarte para comenzar la 1ra Hora (Historia con el Prof. Silva)?",
+              "Your wooden desk next to Jaz. Do you want to sit down and start 1st Hour (History Class with Prof. Silva)?",
+              () => {
+                startHistoryClassSequence();
+              }
+            );
+            return;
+          } else if (classStep === 1) {
+            onTriggerDialogue(
+              "Tu Pupitre Escolar",
+              "🔔 El recreo está finalizando. ¿Deseas sentarte en tu banco para comenzar la 2da Hora de Clases (Matemática con el Profesor Gómez)?",
+              "🔔 Recess is ending. Do you want to sit at your desk to start the 2nd Class Hour (Math with Professor Gómez)?",
+              () => {
+                startMathClassSequence();
+              }
+            );
+            return;
+          } else if (classStep === 2) {
+            onTriggerDialogue(
+              "Tu Pupitre Escolar",
+              "La clase de Matemática concluyó. ¿Deseas sentarte en tu banco para comenzar la 3ra Hora de Clases (Biología con la Profesora Marcela)?",
+              "Math class is done. Do you want to sit at your desk to start 3rd Class Hour (Biology with Professor Marcela)?",
+              () => {
+                startBiologyClassSequence();
+              }
+            );
+            return;
+          } else if (classStep >= 3) {
+            onTriggerDialogue(
+              "Tu Pupitre Escolar",
+              "Las clases del día concluyeron exitosamente. ¡Dirígete al patio para subir al colectivo escolar de regreso a casa!",
+              "The day's classes have finished successfully. Head to the courtyard to board the return school bus home!"
+            );
+            return;
+          }
+        }
+        // Jaz's desk (2, 3)
+        if (target.tx === 2 && target.ty === 3) {
+          onTriggerDialogue(
+            "Pupitre de Jaz",
+            "El banco de Jaz, lleno de lapiceras de colores con brillos, cartuchera de peluche y notas dobladas.",
+            "Jaz's desk, full of glitter gel pens, plush pencil case, and folded notes."
+          );
+          return;
+        }
+      }
+
       onTriggerDialogue(
         "Banco Escolar",
-        "Un pupitre de madera escolar con inscripciones, iniciales y recuerdos de alumnos (+5 min).",
-        "A wooden school desk carved with initials and memories (+5 min)."
+        "Un pupitre de madera escolar con inscripciones, iniciales y recuerdos de alumnos (+2 min).",
+        "A wooden school desk carved with initials and memories (+2 min)."
       );
       return;
     }
+
     if (target.type === "director_desk") {
       soundEngine.playSfx("interact");
-      advanceTime(3);
+      advanceTime(2);
       playSound(300, "triangle", 0.3);
+      if (currentDay === 7) {
+        if (!day7DirectorExpulsionDone) {
+          triggerDay7DirectorExpulsionSequence();
+          return;
+        } else {
+          onTriggerDialogue(
+            "Director Don Héctor (Bajo Posesión)",
+            "¡Ya le he notificado su expulsión! Retírese del establecimiento escolar.",
+            "I have already notified you of your expulsion! Leave the school premises."
+          );
+          return;
+        }
+      }
       onTriggerDialogue(
         "Escritorio de Dirección",
-        "El escritorio del Director Don Héctor, repleto de expedientes, circulares del ministerio y sellos escolares.",
-        "Principal Don Hector's desk, stacked with files and official stamps."
+        "El escritorio de roble del Director Don Héctor, repleto de expedientes, circulares del ministerio y sellos escolares.",
+        "Principal Don Hector's oak desk, stacked with files and official stamps."
       );
       return;
     }
+
+    if (target.type === "director_chair") {
+      soundEngine.playSfx("interact");
+      advanceTime(2);
+      playSound(360, "sine", 0.3);
+      onTriggerDialogue(
+        "Sillón de Visitas de Dirección",
+        "Te sentás cómodamente en el sillón de cuerina de la Dirección (+5% Energía, +2 min).",
+        "You sit comfortably in the principal office visitor chair (+5% Energy, +2 min)."
+      );
+      return;
+    }
+
     if (target.type === "director_bookshelf") {
       soundEngine.playSfx("interact");
       advanceTime(3);
@@ -12226,10 +13187,31 @@ export default function GameCanvas({
       soundEngine.playSfx("interact");
       advanceTime(2);
       playSound(460, "triangle", 0.3);
+      if (target.tx === 2 && target.ty === 1) {
+        addXP(10);
+        onTriggerDialogue(
+          "Tu Casillero Personal (N° 14)",
+          "Abrís tu casillero escolar: adentro tenés calcomanías de bandas de música, una foto con Jaz en la plaza y caramelos de menta (+10 XP, +2 min).",
+          "You open your school locker: inside you have band stickers, a photo with Jaz in the park, and mint candies (+10 XP, +2 min)."
+        );
+        return;
+      }
       onTriggerDialogue(
         "Casilleros Escolares",
-        "Fila de casilleros metálicos azules con candados y calcomanías (+2 min).",
+        "Fila de casilleros metálicos azules con candados y calcomanías escolares (+2 min).",
         "Row of blue metal school lockers with stickers and padlocks (+2 min)."
+      );
+      return;
+    }
+    if (target.type === "soccer_goal" || target.type === "soccer_ball") {
+      playSound(320, "sine", 0.2);
+      onTriggerDialogue(
+        "Arco y Pelota de Fútbol",
+        "La pelota blanca y negra está lista frente al arco del patio escolar. ¿Querés patear unos penales con Mateo?",
+        "The soccer ball is ready in front of the school goal. Want to take penalties against Mateo?",
+        () => {
+          setShowSoccerMinigame(true);
+        }
       );
       return;
     }
@@ -12248,6 +13230,42 @@ export default function GameCanvas({
       soundEngine.playSfx("interact");
       advanceTime(5);
       playSound(420, "sine", 0.3);
+
+      const completedBoardQuests: string[] = (() => {
+        try {
+          const stored = localStorage.getItem("cky_completed_board_quests");
+          return stored ? JSON.parse(stored) : [];
+        } catch {
+          return [];
+        }
+      })();
+
+      if (!completedBoardQuests.includes("quest_lost_notes")) {
+        const next = [...completedBoardQuests, "quest_lost_notes"];
+        try {
+          localStorage.setItem("cky_completed_board_quests", JSON.stringify(next));
+        } catch {}
+        soundEngine.playSfx("fanfare");
+        addXP(40);
+        handleEarnMoney(300);
+        if (onShowNotification) {
+          onShowNotification({
+            icon: "📜",
+            titleEs: "¡Misión Cumplida: Apuntes Perdidos de Geografía!",
+            titleEn: "Quest Completed: Lost Geography Notes!",
+            subEs: "Encontraste los apuntes del Profesor Montenegro (+40 XP, +$300)",
+            subEn: "Found Professor Montenegro's study notes (+40 XP, +$300)",
+            color: "emerald"
+          });
+        }
+        onTriggerDialogue(
+          "📜 Apuntes de Geografía del Profesor Montenegro",
+          "¡Debajo del banco del patio estaban las hojas y mapas de estudio que olvidó el Profesor Montenegro! Cumpliste con éxito el recado del tablón. Recibiste +40 XP y +$300 de gratificación.",
+          "Under the courtyard bench were Professor Montenegro's lost geography study notes and maps! Notice board quest complete. Earned +40 XP and +$300."
+        );
+        return;
+      }
+
       onTriggerDialogue(
         "Banco del Patio Escolar",
         "Te sentás en el banco de madera bajo la sombra a descansar durante el recreo (+5% Energía, +5 min).",
@@ -12282,7 +13300,10 @@ export default function GameCanvas({
 
   const isTileWalkable = (tile: number, map: string): boolean => {
     if (tile === 0) return true;
-    if (map === "bedroom" && tile === 2) return true;
+    if (map === "bedroom") {
+      if (tile === 2) return true;
+      if (playerPos.x >= 7 && playerPos.x <= 8 && playerPos.y >= 3 && playerPos.y <= 4 && tile === 4) return true;
+    }
     if (map === "hallway" && (tile === 17 || tile === 18 || tile === 19 || tile === 3 || (tile >= 81 && tile <= 90))) return true;
     if (map === "empty_room" && (tile === 3 || tile === 26 || tile === 27 || tile === 28)) return true;
     if (map === "house" && (tile === 2 || tile === 3 || tile === 27 || tile === 28)) return true;
@@ -12297,7 +13318,7 @@ export default function GameCanvas({
     if (map === "soulmate_bedroom" && tile === 29) return true;
     if (map.startsWith("classroom_") && tile === 81) return true;
     if (map === "school_courtyard" && (tile === 81 || tile === 77)) return true;
-    if (map === "school_hallway" && ((tile >= 81 && tile <= 90) || tile === 140)) return true;
+    if (map === "school_hallway" && ((tile >= 80 && tile <= 90) || tile === 140)) return true;
     if ((map === "director_office" || map === "teachers_room" || map === "bathroom_girls" || map === "bathroom_boys") && tile === 81) return true;
     if (map === "school_basement") {
       if (tile === 140 || tile === 147 || tile === 149) return true;
@@ -12562,6 +13583,8 @@ export default function GameCanvas({
 
   // Switch level animation and state loader
   const transitionToMap = (mapId: typeof currentMap, newPos: Position) => {
+    setWalkPath([]);
+    setPendingInteraction(null);
     playSound(200, "triangle", 0.3);
     setIsTransitioning(true);
     setFadeOpacity(1);
@@ -12653,8 +13676,8 @@ export default function GameCanvas({
       >
         <canvas
           ref={canvasRef}
-          width={canvasDimensions.width}
-          height={canvasDimensions.height}
+          width={Number.isFinite(canvasDimensions.width) ? canvasDimensions.width : 400}
+          height={Number.isFinite(canvasDimensions.height) ? canvasDimensions.height : 600}
           onPointerDown={handleCanvasPointerDown}
           className="w-full h-full block image-render-pixelated cursor-pointer bg-black touch-none select-none"
           style={{ touchAction: "none" }}
@@ -13273,16 +14296,28 @@ export default function GameCanvas({
                         }, 600);
                       }
                     );
+                  } else if (!hasTalkedToAlanis) {
+                    onTriggerDialogue(
+                      "CKY",
+                      "Me recuesto en la cama a descansar y reflexionar sobre este día de escuela... De repente siento una extraña vibración cósmica en el celular.",
+                      "I lie down on the bed to rest and reflect on this school day... Suddenly I feel a strange cosmic vibration in my phone.",
+                      () => {
+                        playSound(900, "sine", 0.5);
+                        setTimeout(() => {
+                          startAlanisDialogueChain();
+                        }, 500);
+                      }
+                    );
                   } else if (!hasTalkedToAngela) {
                     onTriggerDialogue(
                       "CKY",
-                      "Me acuesto en la cama a dormir... ¡Qué día tan largo!",
-                      "I lie down on the bed to sleep... What a long day!",
+                      "Me acuesto en la cama a descansar... Esperando la señal del espíritu que me encomendó contactar Alanis.",
+                      "I lie down on the bed to rest... Waiting for the sign of the spirit Alanis tasked me with contacting.",
                       () => {
                         playSound(900, "sine", 0.5);
                         setTimeout(() => {
                           startAngelaDialogueChain();
-                        }, 600);
+                        }, 500);
                       }
                     );
                   } else {
@@ -13403,6 +14438,52 @@ export default function GameCanvas({
             </p>
 
             <div className="space-y-2.5 pt-2">
+              {currentDay === 2 && day2TowelMissing && !day2TowelFoundOnChair && (
+                <button
+                  onClick={() => {
+                    setShowJacketModal(false);
+                    setDay2TowelFoundOnChair(true);
+                    localStorage.setItem("cky_day2_towel_found", "true");
+                    setHasTowel(true);
+                    if (setCurrentOutfit) {
+                      setCurrentOutfit("pajamas");
+                    }
+                    unlockDiaryEntry("chapter_02_shower_mystery");
+                    addXP(40);
+                    playSound(880, "sine", 0.5);
+                    onTriggerDialogue(
+                      "¡Misterio Resuelto en la Silla! (+40 XP)",
+                      "¡Encontraste tu toalla limpia doblada arriba de la silla de tu habitación! CKY se seca aliviada y se pone su cómodo piyama de seda para dormir.",
+                      "You found your clean towel folded on top of the chair! CKY dries off relieved and puts on comfy silk pajamas.",
+                      () => {
+                        onTriggerDialogue(
+                          "CKY",
+                          "¡Acá estaba la toalla! ¡¿Cómo llegó hasta acá arriba de la silla?! Qué misterio más raro...",
+                          "Here's the towel! How did it get on top of the chair?! What a weird mystery...",
+                          () => {
+                            onTriggerDialogue(
+                              "Ángela (Espíritu)",
+                              "¡Jajajaja misterios de la casa embrujada! Ahora que ya estás perfumada y en piyama, ¡metete en la camita a descansar que mañana viernes se viene con todo!",
+                              "Hahahaha haunted house mysteries! Now that you're fresh and in pajamas, get in bed to rest because tomorrow Friday will be huge!"
+                            );
+                          }
+                        );
+                      }
+                    );
+                  }}
+                  className="w-full py-3 px-4 rounded-xl border-2 border-yellow-400 bg-yellow-950/60 hover:bg-yellow-900/80 text-yellow-200 font-mono text-xs text-left flex items-center justify-between animate-pulse cursor-pointer shadow-lg"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🧣</span>
+                    <div>
+                      <p className="font-bold text-yellow-300">¡Agarrar la toalla de la silla! (+40 XP)</p>
+                      <p className="text-[10px] text-yellow-400">Secarte y ponerte el piyama de seda</p>
+                    </div>
+                  </div>
+                  <span className="text-yellow-400 font-bold">➔</span>
+                </button>
+              )}
+
               <button
                 onClick={() => {
                   setShowJacketModal(false);
@@ -13694,120 +14775,286 @@ export default function GameCanvas({
 
       {/* Nightstand Modal (Mesa de luz) */}
       {showNightstandModal && (
-        <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-6 text-center animate-fade-in">
-          <div className="bg-slate-900 border-2 border-yellow-500/50 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4">
-            <div className="text-3xl">{isPhoneCharging ? "⚡📱" : "🛏️"}</div>
-            <h3 className="text-lg font-bold font-display text-yellow-400 uppercase tracking-wide">
-              {language === "es" ? "Mesa de Luz de CKY" : "CKY's Nightstand"}
-            </h3>
-            <p className="text-xs text-slate-300 font-mono leading-relaxed">
-              {isPhoneCharging
-                ? (language === "es"
-                    ? "Tu celular se encuentra sobre el cargador en la mesa de luz. La pantalla indica carga activa."
-                    : "Your phone is resting on the charger on the nightstand.")
-                : (language === "es"
-                    ? "Una mesa de luz con un velador retro y un cargador de pared. ¿Qué deseas hacer?"
-                    : "A bedside table with a retro lamp and wall charger. What do you want to do?")
-              }
-            </p>
+        <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-4 text-center animate-fade-in">
+          <div className="bg-slate-900 border-2 border-yellow-500/50 rounded-2xl p-5 max-w-sm w-full shadow-2xl space-y-3.5 max-h-[92vh] flex flex-col">
+            <div className="flex items-center justify-center gap-2 text-2xl">
+              <span>🛏️</span>
+              <span>💡</span>
+              {isPhoneCharging ? <span>⚡📱</span> : (!hasPhone ? <span>📱</span> : null)}
+              {!inventory.some(i => i.id === "mission_diary" || i.id === "diary") && <span>📖</span>}
+            </div>
+            <div>
+              <h3 className="text-base font-bold font-display text-yellow-400 uppercase tracking-wide">
+                {language === "es" ? "Mesa de Luz de CKY" : "CKY's Nightstand"}
+              </h3>
+              <p className="text-[11px] text-slate-300 font-mono leading-relaxed mt-1">
+                {language === "es"
+                  ? "Mesa de luz de madera junto a la cabecera de tu cama. Incluye velador cálido, cargador para el celular y espacio para tu diario íntimo."
+                  : "Wooden bedside table next to your bed. Features a warm lamp, phone charger, and room for your private diary."
+                }
+              </p>
+            </div>
 
-            <div className="space-y-2.5 pt-2">
-              {isPhoneCharging ? (
+            <div className="space-y-2 pt-1 overflow-y-auto pr-1 flex-1">
+              {/* 1. DIARIO ÍNTIMO DE CKY */}
+              {(() => {
+                const hasDiary = inventory.some(i => i.id === "mission_diary" || i.id === "diary");
+                if (!hasDiary) {
+                  return (
+                    <button
+                      onClick={() => {
+                        addInventoryItem({
+                          id: "mission_diary",
+                          nameEs: "Diario Íntimo de CKY",
+                          nameEn: "CKY's Private Diary",
+                          descEs: "Tu diario íntimo con candado. Guarda tus misiones, secretos, reflexiones y compañeros.",
+                          descEn: "Your private diary with lock. Keeps your missions, secrets, reflections, and companions.",
+                          icon: "📖",
+                          isKey: true,
+                          category: "pockets"
+                        });
+                        addXP(15);
+                        advanceTime(2);
+                        playSound(660, "sine", 0.25);
+                        androidBridge.hapticAction();
+                        onTriggerDialogue(
+                          "CKY",
+                          "¡Acá está mi Diario Íntimo! No salgo de casa sin él. En él anoto mis tareas de la escuela, reflexiones y secretos (+15 XP, +2 min).",
+                          "Here is my Private Diary! I never leave home without it. It has my school tasks, reflections and secrets (+15 XP, +2 min)."
+                        );
+                      }}
+                      className="w-full py-2.5 px-3.5 rounded-xl border border-purple-500/50 bg-purple-950/40 hover:bg-purple-900/60 text-purple-200 font-mono text-xs text-left flex items-center justify-between transition-all group"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-xl">📖</span>
+                        <div>
+                          <p className="font-bold text-purple-300 group-hover:text-purple-200">
+                            {language === "es" ? "Recoger Diario Íntimo (+15 XP, +2 min)" : "Pick up Private Diary (+15 XP, +2 min)"}
+                          </p>
+                          <p className="text-[10px] text-purple-400/80">
+                            {language === "es" ? "Anotaciones, tareas diarias, secretos y mapas" : "Daily tasks, secrets, notes & maps"}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-purple-400 font-bold text-sm">➔</span>
+                    </button>
+                  );
+                } else {
+                  return (
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => {
+                          setShowNightstandModal(false);
+                          playSound(300, "sine", 0.15);
+                          onOpenDiary();
+                        }}
+                        className="flex-1 py-2 px-3 rounded-xl border border-purple-500/30 bg-purple-950/30 hover:bg-purple-900/50 text-purple-200 font-mono text-xs text-left flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span>📖</span>
+                          <div>
+                            <p className="font-bold text-[11px]">{language === "es" ? "Leer Diario Íntimo" : "Read Private Diary"}</p>
+                            <p className="text-[9px] text-purple-400/80">{language === "es" ? "Ver misiones, secretos y estado" : "View missions & stats"}</p>
+                          </div>
+                        </div>
+                        <span className="text-purple-400 font-bold">➔</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          removeInventoryItem?.("mission_diary");
+                          removeInventoryItem?.("diary");
+                          playSound(440, "sine", 0.15);
+                          onTriggerDialogue(
+                            "Mesa de Luz",
+                            "Dejaste el Diario Íntimo guardado en el cajón de la mesa de luz.",
+                            "You left the Private Diary in the nightstand drawer."
+                          );
+                        }}
+                        className="py-2 px-2.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-mono text-[10px]"
+                        title={language === "es" ? "Guardar diario en la mesa de luz" : "Leave diary on nightstand"}
+                      >
+                        {language === "es" ? "Guardar 📥" : "Store 📥"}
+                      </button>
+                    </div>
+                  );
+                }
+              })()}
+
+              {/* 2. CELULAR SMARTPHONE */}
+              {/* Case A: Phone is on the nightstand (not yet picked up) */}
+              {!hasPhone && !isPhoneCharging && (
                 <button
                   onClick={() => {
-                    setShowNightstandModal(false);
-                    setIsPhoneCharging(false);
                     setHasPhone(true);
                     setStats((prev) => ({ ...prev, bateriaCelular: 100 }));
-                    advanceTime(10);
+                    advanceTime(2);
+                    addXP(15);
                     addInventoryItem({
                       id: "pocket_phone",
                       nameEs: "Celular Smartphone",
                       nameEn: "Smartphone",
-                      descEs: "Tu teléfono móvil. Al abrirlo dice 'Sin mensajes nuevos'. Te sirve para comunicarte con tus amigos.",
-                      descEn: "Your phone. Displays 'No new messages'. Used to communicate with friends.",
+                      descEs: "Tu teléfono móvil. Al abrirlo puedes ver tus chats, música, cámara y estado de batería.",
+                      descEn: "Your mobile phone. Open it to check chats, music, camera, and battery.",
                       icon: "📱",
                       isKey: true,
                       category: "pockets"
                     });
                     playSound(520, "sine", 0.3);
+                    androidBridge.hapticAction();
                     onTriggerDialogue(
                       "CKY",
-                      "¡Guardaste el celular en tu bolsillo! Carga completamente el celular (+100% Batería, +10 min).",
-                      "You stored the smartphone in your pocket fully charged (+100% Battery, +10 min)!"
+                      "¡Listo! Celular con 100% de batería guardado en el bolsillo para estar comunicada (+15 XP, +2 min).",
+                      "Done! Smartphone with 100% battery placed in pocket (+15 XP, +2 min)."
                     );
                   }}
-                  className="w-full py-2.5 px-4 rounded-xl border border-lime-500/40 bg-lime-950/40 hover:bg-lime-900/60 text-lime-200 font-mono text-xs text-left flex items-center justify-between"
+                  className="w-full py-2.5 px-3.5 rounded-xl border border-cyan-500/50 bg-cyan-950/40 hover:bg-cyan-900/60 text-cyan-200 font-mono text-xs text-left flex items-center justify-between transition-all group"
                 >
-                  <div className="flex items-center gap-2">
-                    <span>🔋</span>
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl">📱</span>
                     <div>
-                      <p className="font-bold">Guardar el celular (+10 min)</p>
-                      <p className="text-[10px] text-lime-300/80">Carga completamente el celular y lo guarda en el inventario</p>
+                      <p className="font-bold text-cyan-300 group-hover:text-cyan-200">
+                        {language === "es" ? "Recoger Celular de la mesa de luz (+15 XP, +2 min)" : "Pick up Smartphone (+15 XP, +2 min)"}
+                      </p>
+                      <p className="text-[10px] text-cyan-400/80">
+                        {language === "es" ? "Cargado al 100% de batería. Se guarda en el bolsillo." : "Fully charged at 100% battery. Stored in pocket."}
+                      </p>
                     </div>
                   </div>
-                  <span className="text-lime-400 font-bold">➔</span>
+                  <span className="text-cyan-400 font-bold text-sm">➔</span>
                 </button>
-              ) : (
-                hasPhone && (
-                  <button
-                    onClick={() => {
-                      setShowNightstandModal(false);
-                      setIsPhoneCharging(true);
-                      setHasPhone(false);
-                      removeInventoryItem?.("pocket_phone");
-                      playSound(400, "triangle", 0.3);
-                      onTriggerDialogue(
-                        "Mesa de Luz",
-                        "Dejaste el celular cargando sobre la mesa de luz. La pantalla muestra el rayo de carga.",
-                        "You left the phone charging on the nightstand."
-                      );
-                    }}
-                    className="w-full py-2.5 px-4 rounded-xl border border-yellow-500/40 bg-yellow-950/40 hover:bg-yellow-900/60 text-yellow-200 font-mono text-xs text-left flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span>⚡</span>
-                      <div>
-                        <p className="font-bold">Dejar cargando el celular</p>
-                        <p className="text-[10px] text-yellow-300/80">Conecta el teléfono al cargador de la mesa de luz</p>
-                      </div>
-                    </div>
-                    <span className="text-yellow-400 font-bold">➔</span>
-                  </button>
-                )
               )}
 
+              {/* Case B: Phone is charging on nightstand */}
+              {isPhoneCharging && (
+                <button
+                  onClick={() => {
+                    setIsPhoneCharging(false);
+                    setHasPhone(true);
+                    setStats((prev) => ({ ...prev, bateriaCelular: 100 }));
+                    advanceTime(2);
+                    addInventoryItem({
+                      id: "pocket_phone",
+                      nameEs: "Celular Smartphone",
+                      nameEn: "Smartphone",
+                      descEs: "Tu teléfono móvil con 100% de batería. Al abrirlo puedes ver tus chats, música y cámara.",
+                      descEn: "Your phone with 100% battery. Open it to check chats, music, and camera.",
+                      icon: "📱",
+                      isKey: true,
+                      category: "pockets"
+                    });
+                    playSound(520, "sine", 0.3);
+                    androidBridge.hapticAction();
+                    onTriggerDialogue(
+                      "CKY",
+                      "Desconectaste tu celular del cargador. ¡Batería completa al 100%! (+2 min).",
+                      "You disconnected your phone from the charger. Full 100% battery! (+2 min)."
+                    );
+                  }}
+                  className="w-full py-2.5 px-3.5 rounded-xl border border-lime-500/50 bg-lime-950/40 hover:bg-lime-900/60 text-lime-200 font-mono text-xs text-left flex items-center justify-between transition-all group"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl">🔋</span>
+                    <div>
+                      <p className="font-bold text-lime-300 group-hover:text-lime-200">
+                        {language === "es" ? "Desconectar y tomar celular (100% Batería)" : "Disconnect and grab phone (100% Battery)"}
+                      </p>
+                      <p className="text-[10px] text-lime-400/80">
+                        {language === "es" ? "La batería está al 100%. Guardar en el bolsillo." : "Battery is at 100%. Store in pocket."}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-lime-400 font-bold text-sm">➔</span>
+                </button>
+              )}
+
+              {/* Case C: CKY has the phone -> Option to put it to charge */}
+              {hasPhone && !isPhoneCharging && (
+                <button
+                  onClick={() => {
+                    setIsPhoneCharging(true);
+                    setHasPhone(false);
+                    removeInventoryItem?.("pocket_phone");
+                    removeInventoryItem?.("phone");
+                    setStats((prev) => ({ ...prev, bateriaCelular: 100 }));
+                    advanceTime(10);
+                    playSound(400, "triangle", 0.3);
+                    androidBridge.hapticAction();
+                    onTriggerDialogue(
+                      "Mesa de Luz",
+                      "Conectaste el celular al cargador de la mesa de luz (+10 min). La pantalla muestra el rayo de carga rápida y la batería se recarga al 100%.",
+                      "You plugged the phone into the nightstand charger (+10 min). Screen shows fast charge icon and battery restores to 100%."
+                    );
+                  }}
+                  className="w-full py-2.5 px-3.5 rounded-xl border border-yellow-500/40 bg-yellow-950/40 hover:bg-yellow-900/60 text-yellow-200 font-mono text-xs text-left flex items-center justify-between transition-all group"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl">⚡</span>
+                    <div>
+                      <p className="font-bold text-yellow-300 group-hover:text-yellow-200">
+                        {language === "es" ? "Poner a cargar el celular (+10 min, 100% Batería)" : "Charge phone (+10 min, 100% Battery)"}
+                      </p>
+                      <p className="text-[10px] text-yellow-400/80">
+                        {language === "es" ? "Conecta el teléfono al cargador de pared para recargar la batería" : "Plug phone into wall charger to restore battery"}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-yellow-400 font-bold text-sm">➔</span>
+                </button>
+              )}
+
+              {/* 3. BEDSIDE LAMP TOGGLE */}
+              <button
+                onClick={() => {
+                  const nextState = !isBedsideLampOn;
+                  setIsBedsideLampOn(nextState);
+                  playSound(nextState ? 700 : 400, "square", 0.1);
+                  androidBridge.hapticTap();
+                }}
+                className="w-full py-2 px-3.5 rounded-xl border border-amber-500/30 bg-amber-950/30 hover:bg-amber-900/50 text-amber-200 font-mono text-xs text-left flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">{isBedsideLampOn ? "💡" : "🌑"}</span>
+                  <div>
+                    <p className="font-bold text-amber-300">
+                      {isBedsideLampOn
+                        ? (language === "es" ? "Apagar velador de noche" : "Turn off night lamp")
+                        : (language === "es" ? "Encender velador de noche" : "Turn on night lamp")}
+                    </p>
+                    <p className="text-[10px] text-amber-400/70">
+                      {language === "es" ? "Iluminación ambiental cálida de cabecera" : "Warm bedside ambient lighting"}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-amber-400 font-bold text-xs">{isBedsideLampOn ? "ON" : "OFF"}</span>
+              </button>
+
+              {/* 4. ROOM CUSTOMIZATION */}
               <button
                 onClick={() => {
                   setShowNightstandModal(false);
                   setShowRoomCustomization(true);
                 }}
-                className="w-full py-2.5 px-4 rounded-xl border border-pink-500/40 bg-pink-950/40 hover:bg-pink-900/60 text-pink-200 font-mono text-xs text-left flex items-center justify-between"
+                className="w-full py-2 px-3.5 rounded-xl border border-pink-500/40 bg-pink-950/30 hover:bg-pink-900/50 text-pink-200 font-mono text-xs text-left flex items-center justify-between"
               >
-                <div className="flex items-center gap-2">
-                  <span>🎨</span>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">🎨</span>
                   <div>
-                    <p className="font-bold">{language === "es" ? "Decorar Habitación" : "Customize Room"}</p>
+                    <p className="font-bold text-pink-300">{language === "es" ? "Decorar Habitación" : "Customize Room"}</p>
                     <p className="text-[10px] text-pink-300/80">{language === "es" ? "Pósters, acolchados y luces de ambiente" : "Posters, bedspread & fairy lights"}</p>
                   </div>
                 </div>
                 <span className="text-pink-400 font-bold">➔</span>
               </button>
-
-              <button
-                onClick={() => {
-                  setShowNightstandModal(false);
-                  onTriggerDialogue(
-                    "Mesa de Luz",
-                    "Mesa de luz de CKY. Un espacio ordenado con un cargador y velador.",
-                    "CKY's bedside table with a charger and lamp."
-                  );
-                }}
-                className="w-full py-2 px-4 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs"
-              >
-                Cerrar
-              </button>
             </div>
+
+            <button
+              onClick={() => {
+                setShowNightstandModal(false);
+              }}
+              className="w-full py-2 px-4 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs transition active:scale-95"
+            >
+              {language === "es" ? "Cerrar" : "Close"}
+            </button>
           </div>
         </div>
       )}
@@ -14093,6 +15340,61 @@ export default function GameCanvas({
             </p>
 
             <div className="space-y-2.5 pt-2">
+              {currentDay === 2 && !day2ShowerCompleted && (
+                <button
+                  onClick={() => {
+                    setShowShowerModal(false);
+                    setDay2ShowerCompleted(true);
+                    localStorage.setItem("cky_day2_shower_completed", "true");
+                    setDay2TowelMissing(true);
+                    localStorage.setItem("cky_day2_towel_missing", "true");
+                    if (setCurrentOutfit) {
+                      setCurrentOutfit("naked");
+                    }
+                    setStats(prev => ({ ...prev, higiene: 100 }));
+                    advanceTime(15);
+                    addXP(40);
+                    playSound(780, "sine", 0.4);
+                    onTriggerDialogue(
+                      "Ducha Divertida con Ángela (Día 2)",
+                      "Te metés a la ducha tibia y el agua reconfortante te quita toda la tierra del cementerio (+100% Higiene, +40 XP).",
+                      "You step into the warm shower, washing away all cemetery dirt (+100% Hygiene, +40 XP).",
+                      () => {
+                        onTriggerDialogue(
+                          "Ángela (Espíritu)",
+                          "¡Ay CKY qué alivio el agua calentita! Menos mal que te pegás un baño porque con la batalla en el cementerio tenías una baranda a cripta medieval que volteaba a un regimiento... ¡Jajajaja!",
+                          "Oh CKY what a relief, warm water! Good thing you're showering because you smelled like a medieval crypt... Hahahaha!",
+                          () => {
+                            onTriggerDialogue(
+                              "CKY",
+                              "¡Ey! ¡¿Y mi toalla?! ¡Siempre la dejo colgada en el toallero! ¡¿A dónde fue a parar?!",
+                              "Hey! Where's my towel?! I always leave it hanging on the towel rack! Where did it go?!",
+                              () => {
+                                onTriggerDialogue(
+                                  "Ángela (Espíritu)",
+                                  "¡Jajajajaja! ¡Es el misterio del siglo, CKY! ¡Te quedaste en cueros! ¡Vas a tener que cruzar corriendo toda la casa desnuda hasta tu pieza antes de que te vea alguien! Fijate arriba de la silla de tu habitación, me parece que vi un bulto blanco ahí.",
+                                  "Hahahahaha! Mystery of the century, CKY! You're in the buff! You'll have to sprint naked through the whole house to your bedroom! Check on top of your bedroom chair, I think I saw a white pile there."
+                                );
+                              }
+                            );
+                          }
+                        );
+                      }
+                    );
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl border-2 border-pink-400 bg-pink-950/60 hover:bg-pink-900/80 text-pink-200 font-mono text-xs text-left flex items-center justify-between animate-pulse cursor-pointer shadow-lg"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🚿</span>
+                    <div>
+                      <p className="font-bold text-pink-300">Ducha Divertida con Ángela (Día 2) (+40 XP)</p>
+                      <p className="text-[10px] text-pink-400">Sacarte la tierra del cementerio con las ocurrencias de Ángela</p>
+                    </div>
+                  </div>
+                  <span className="text-pink-400 font-bold">➔</span>
+                </button>
+              )}
+
               {currentDay === 7 && day7AlanisBedroomArgumentDone && !day7ShowerDone && (
                 <button
                   onClick={() => {
@@ -14170,11 +15472,24 @@ export default function GameCanvas({
                     if (setCurrentOutfit) {
                       setCurrentOutfit("naked");
                     }
-                    onTriggerDialogue(
-                      "Ducha",
-                      "Te diste una ducha tibia (+35 Higiene, +10 XP, +10 min). ¡Saliste de la ducha desnuda y blureada! Toma una toalla o ve a cambiarte al ropero.",
-                      "You showered (+35 Hygiene, +10 XP, +10 min). You are now naked and blurred!"
-                    );
+                    if (currentDay === 1 && !hasTalkedToAlanis) {
+                      onTriggerDialogue(
+                        "Ducha Refrescante de CKY",
+                        "Te diste una ducha tibia (+35 Higiene, +10 XP, +10 min). ¡Saliste de la ducha perfumada y relajada! De repente sientes una extraña vibración cósmica en el celular de tu mesa de luz...",
+                        "You showered (+35 Hygiene, +10 XP, +10 min). You emerge scented and relaxed! Suddenly you feel a strange cosmic vibration from your phone on the nightstand...",
+                        () => {
+                          setTimeout(() => {
+                            startAlanisDialogueChain();
+                          }, 600);
+                        }
+                      );
+                    } else {
+                      onTriggerDialogue(
+                        "Ducha",
+                        "Te diste una ducha tibia (+35 Higiene, +10 XP, +10 min). ¡Saliste de la ducha desnuda y blureada! Toma una toalla o ve a cambiarte al ropero.",
+                        "You showered (+35 Hygiene, +10 XP, +10 min). You are now naked and blurred!"
+                      );
+                    }
                   }
                   playSound(650, "sine", 0.3);
                 }}
@@ -14544,6 +15859,12 @@ export default function GameCanvas({
                           );
                         }
                       );
+                    } else if (currentDay === 2) {
+                      onTriggerDialogue(
+                        "CKY",
+                        "mmmmm Mi favorito, sándwich de Salame y queso. ¡Este se lo llevo a Ángela a su tumba rosa en el cementerio!",
+                        "mmmm My favorite, salami and cheese sandwich. I will take this to Angela at her pink grave in the cemetery!"
+                      );
                     } else {
                       onTriggerDialogue(
                         "CKY",
@@ -14709,31 +16030,42 @@ export default function GameCanvas({
             </p>
 
             <div className="space-y-2.5 pt-2">
-              <button
-                onClick={() => {
-                  setShowTowelModal(false);
-                  setHasTowel(true);
-                  if (setCurrentOutfit) {
-                    setCurrentOutfit("towel");
-                  }
-                  playSound(420, "sine", 0.3);
-                  onTriggerDialogue(
-                    "Toallero",
-                    "Tomaste una toalla suave y te envolviste en ella. Estarás envuelta en toalla hasta vestirte en el ropero de tu habitación.",
-                    "You took a soft towel to wrap yourself comfortably."
-                  );
-                }}
-                className="w-full py-2.5 px-4 rounded-xl border border-rose-500/40 bg-rose-950/40 hover:bg-rose-900/60 text-rose-200 font-mono text-xs text-left flex items-center justify-between cursor-pointer"
-              >
-                <div className="flex items-center gap-2">
-                  <span>🧣</span>
-                  <div>
-                    <p className="font-bold">Tomar toalla para secarte y envolverte</p>
-                    <p className="text-[10px] text-rose-300/80">Toalla de felpa reconfortante</p>
-                  </div>
+              {currentDay === 2 && day2ShowerCompleted && day2TowelMissing && !day2TowelFoundOnChair ? (
+                <div className="p-3 bg-rose-950/60 border border-rose-500/50 rounded-xl text-rose-200 text-xs font-mono text-left space-y-1.5">
+                  <p className="font-bold text-rose-300 flex items-center gap-1.5">
+                    <span>⚠️</span> ¡El toallero está completamente vacío!
+                  </p>
+                  <p className="text-[11px] text-rose-200/90 leading-relaxed">
+                    ¡Tu toalla desapareció misteriosamente! No está en el barral. Ángela se descostilla de la risa y te dice que corras en cueros a tu habitación a fijarte arriba de la silla.
+                  </p>
                 </div>
-                <span className="text-rose-400 font-bold">➔</span>
-              </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setShowTowelModal(false);
+                    setHasTowel(true);
+                    if (setCurrentOutfit) {
+                      setCurrentOutfit("towel");
+                    }
+                    playSound(420, "sine", 0.3);
+                    onTriggerDialogue(
+                      "Toallero",
+                      "Tomaste una toalla suave y te envolviste en ella. Estarás envuelta en toalla hasta vestirte en el ropero de tu habitación.",
+                      "You took a soft towel to wrap yourself comfortably."
+                    );
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl border border-rose-500/40 bg-rose-950/40 hover:bg-rose-900/60 text-rose-200 font-mono text-xs text-left flex items-center justify-between cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <span>🧣</span>
+                    <div>
+                      <p className="font-bold">Tomar toalla para secarte y envolverte</p>
+                      <p className="text-[10px] text-rose-300/80">Toalla de felpa reconfortante</p>
+                    </div>
+                  </div>
+                  <span className="text-rose-400 font-bold">➔</span>
+                </button>
+              )}
 
               <button
                 onClick={() => {
@@ -15222,12 +16554,12 @@ export default function GameCanvas({
           <div className="bg-slate-900 border-2 border-emerald-500/50 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4">
             <div className="text-3xl">🚏</div>
             <h3 className="text-lg font-bold font-display text-emerald-400 uppercase tracking-wide">
-              {language === "es" ? "Parada de Colectivo - Línea 4" : "Bus Stop - Line 4"}
+              {language === "es" ? "Parada de Colectivos • Colectivo 87 & Línea 4" : "Bus Stop • Bus 87 & Line 4"}
             </h3>
             <p className="text-xs text-slate-300 font-mono leading-relaxed">
               {language === "es"
-                ? "El colectivo verde de la Línea 4 conecta los principales puntos de la ciudad. ¿Hacia dónde deseas viajar?"
-                : "The green Line 4 bus connects all major city spots. Where would you like to travel?"}
+                ? "Parada barrial frente a casa. El Colectivo 87 conecta directamente con la Escuela Secundaria N° 87, y el Colectivo Línea 4 conecta con el Cementerio y la Plaza. ¿Hacia dónde deseas viajar?"
+                : "Neighborhood bus stop. Bus 87 connects directly to High School No. 87, and Line 4 connects to Cemetery and Plaza. Where would you like to travel?"}
             </p>
 
             <div className="space-y-2 pt-1 max-h-64 overflow-y-auto pr-1">
@@ -15239,9 +16571,9 @@ export default function GameCanvas({
                   transitionToMap("school_courtyard", { x: 3, y: 7 });
                   playSound(480, "triangle", 0.3);
                   onTriggerDialogue(
-                    "Colectivo Línea 4",
-                    "Viajaste en el colectivo verde hasta el patio de la Escuela Secundaria N° 4 (+15 min).",
-                    "You rode the green bus to the High School Courtyard (+15 min)."
+                    "Colectivo Escolar 87",
+                    "Viajaste en el colectivo escolar hasta el patio de la Escuela Secundaria N° 87 (+15 min).",
+                    "You rode the school bus to High School No. 87 Courtyard (+15 min)."
                   );
                 }}
                 className="w-full py-2 px-3 rounded-xl border font-mono text-xs text-left flex items-center justify-between border-sky-500/40 bg-sky-950/40 hover:bg-sky-900/60 text-sky-200 cursor-pointer shadow active:scale-95"
@@ -15249,8 +16581,8 @@ export default function GameCanvas({
                 <div className="flex items-center gap-2">
                   <span>🏫</span>
                   <div>
-                    <p className="font-bold">{language === "es" ? "Escuela Secundaria N° 4" : "High School Courtyard"}</p>
-                    <p className="text-[10px] text-sky-300/80">{language === "es" ? "Patio escolar y aulas" : "Courtyard & classrooms"}</p>
+                    <p className="font-bold">{language === "es" ? "Colectivo 87: Escuela Secundaria N° 87" : "Bus 87: High School No. 87"}</p>
+                    <p className="text-[10px] text-sky-300/80">{language === "es" ? "Patio escolar, aulas y lockers" : "Courtyard, classrooms & lockers"}</p>
                   </div>
                 </div>
                 <span className="text-sky-400 font-bold">➔</span>
@@ -15286,7 +16618,7 @@ export default function GameCanvas({
                 onClick={() => {
                   setShowBusStopModal(false);
                   advanceTime(5);
-                  transitionToMap("bus_interior", { x: 1, y: 8 });
+                  transitionToMap("bus_interior", { x: 2, y: 5 });
                   playSound(480, "triangle", 0.3);
                   onTriggerDialogue(
                     "Interior del Colectivo Línea 4",
@@ -15413,6 +16745,127 @@ export default function GameCanvas({
               className="mt-3 px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs font-mono rounded-lg"
             >
               {language === "es" ? "Cerrar" : "Close"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Name Neighbor Modal */}
+      {showNameNeighborModal && (
+        <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-6 text-center animate-fade-in">
+          <div className="bg-slate-900 border-2 border-amber-500/50 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4">
+            <div className="text-3xl">👱‍♀️</div>
+            <h3 className="text-lg font-bold font-display text-amber-400 uppercase tracking-wide">
+              {language === "es" ? "¿Cómo se llama tu vecina?" : "Name your neighbor"}
+            </h3>
+            <p className="text-xs text-slate-300 font-mono leading-relaxed">
+              {language === "es"
+                ? "Esa chica rubia es tu vecina de al lado y tu peor enemiga desde hace un año. ¿Cómo se llama?"
+                : "That blonde girl is your neighbor next door and your worst enemy for the past year. What is her name?"}
+            </p>
+
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={inputNeighborName}
+                onChange={(e) => setInputNeighborName(e.target.value)}
+                placeholder={language === "es" ? "Ej: Sol, Paula, Mica..." : "e.g. Sol, Paula, Mica..."}
+                className="w-full px-3 py-2 bg-slate-800 border border-amber-500/40 rounded-xl text-amber-200 font-mono text-xs focus:outline-none focus:border-amber-400"
+                maxLength={20}
+                autoFocus
+              />
+
+              {/* Quick suggestions */}
+              <div className="flex flex-wrap gap-1.5 justify-center pt-1">
+                {["Sol", "Paula", "Micaela", "Camila", "Lucía", "Zoe"].map((suggestedName) => (
+                  <button
+                    key={suggestedName}
+                    type="button"
+                    onClick={() => setInputNeighborName(suggestedName)}
+                    className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-amber-300/80 text-[11px] font-mono rounded-md border border-slate-700"
+                  >
+                    {suggestedName}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-2">
+              <button
+                onClick={handleConfirmNeighborName}
+                className="w-full py-2.5 px-4 rounded-xl border font-mono text-xs text-center font-bold border-amber-500/50 bg-amber-950/50 hover:bg-amber-900/70 text-amber-200 cursor-pointer shadow-lg active:scale-95"
+              >
+                {language === "es" ? "✓ Confirmar Nombre y Subir al Colectivo" : "✓ Confirm Name & Board Bus"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* School Bus Arrival / Boarding Modal */}
+      {showSchoolBusArrivalModal && (
+        <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-6 text-center animate-fade-in">
+          <div className="bg-slate-900 border-2 border-yellow-500/50 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4">
+            <div className="text-3xl">🚌</div>
+            <h3 className="text-lg font-bold font-display text-yellow-400 uppercase tracking-wide">
+              {language === "es" ? "Colectivo Escolar - Escuela N° 87" : "School Bus - High School #87"}
+            </h3>
+            <p className="text-xs text-slate-300 font-mono leading-relaxed">
+              {language === "es"
+                ? "El colectivo escolar amarillo con Don Carlos al volante está listo para partir hacia la escuela."
+                : "The yellow school bus with Don Carlos at the wheel is ready to depart for school."}
+            </p>
+
+            <div className="space-y-2 pt-1">
+              <button
+                onClick={() => {
+                  setShowSchoolBusArrivalModal(false);
+                  boardSchoolBusFinal(neighborName || "Sol");
+                }}
+                className="w-full py-2 px-3 rounded-xl border font-mono text-xs text-left flex items-center justify-between border-yellow-500/40 bg-yellow-950/40 hover:bg-yellow-900/60 text-yellow-200 cursor-pointer shadow active:scale-95"
+              >
+                <div className="flex items-center gap-2">
+                  <span>🚌</span>
+                  <div>
+                    <p className="font-bold">{language === "es" ? "Subir al Colectivo (Interior)" : "Board School Bus (Interior)"}</p>
+                    <p className="text-[10px] text-yellow-300/80">{language === "es" ? "Pasillo, compañeros y asientos" : "Aisle, classmates & seats"}</p>
+                  </div>
+                </div>
+                <span className="text-yellow-400 font-bold">➔</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowSchoolBusArrivalModal(false);
+                  advanceTime(10);
+                  addXP(25);
+                  unlockDiaryEntry("chapter_01_bus");
+                  transitionToMap("school_courtyard", { x: 3, y: 7 });
+                  playSound(520, "triangle", 0.4);
+                  onTriggerDialogue(
+                    "Chofer Don Carlos",
+                    "¡Llegamos a la Escuela Secundaria N° 87! ¡A descender todos al patio!",
+                    "We've arrived at High School No. 87! Everyone out to the courtyard!"
+                  );
+                }}
+                className="w-full py-2 px-3 rounded-xl border font-mono text-xs text-left flex items-center justify-between border-sky-500/40 bg-sky-950/40 hover:bg-sky-900/60 text-sky-200 cursor-pointer shadow active:scale-95"
+              >
+                <div className="flex items-center gap-2">
+                  <span>🏫</span>
+                  <div>
+                    <p className="font-bold">{language === "es" ? "Viajar directo a la Escuela (+10 min)" : "Fast travel to School (+10 min)"}</p>
+                    <p className="text-[10px] text-sky-300/80">{language === "es" ? "Llegar directo al patio escolar" : "Arrive directly at the courtyard"}</p>
+                  </div>
+                </div>
+                <span className="text-sky-400 font-bold">➔</span>
+              </button>
+            </div>
+
+            <button
+              onClick={() => setShowSchoolBusArrivalModal(false)}
+              className="mt-3 px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs font-mono rounded-lg"
+            >
+              {language === "es" ? "Quedarse en la calle" : "Stay on the street"}
             </button>
           </div>
         </div>
@@ -15635,6 +17088,41 @@ export default function GameCanvas({
             localStorage.setItem("cky_day5_photos_taken", "true");
             addXP(100);
             unlockDiaryEntry("chapter_05_sexy_photoshoot");
+          }}
+        />
+      )}
+
+      {/* Day 2: Shadow Battle Modal */}
+      {showDay2ShadowBattleModal && (
+        <Day2ShadowBattleModal
+          language={language}
+          playSound={playSound}
+          onVictory={() => {
+            setShowDay2ShadowBattleModal(false);
+            setDay2ShadowDefeated(true);
+            localStorage.setItem("cky_day2_shadow_defeated", "true");
+            unlockDiaryEntry("chapter_02_shadow_battle");
+            addXP(60);
+            playSound(880, "sine", 0.5);
+            onTriggerDialogue(
+              "Purificación Exitosa (+60 XP)",
+              "¡La Sombra Rencorosa del Limbo fue completamente purificada! Las chispas doradas y rosas iluminan el camposanto en paz.",
+              "The Spiteful Limbo Shadow was completely purified! Golden and pink sparks illuminate the cemetery in peace.",
+              () => {
+                onTriggerDialogue(
+                  "Ángela (Espíritu)",
+                  "¡Tremenda paliza le dimos a ese esperpento! ¡Bien jugado amiga! Ahora volvamos a tu casa en el colectivo 4 que estás llena de tierra de cripta... ¡te hace falta una buena ducha en el baño!",
+                  "We gave that monster a massive beating! Well played bestie! Now let's head back to your house on bus Line 4, you're full of crypt dust... you need a good shower in the bathroom!",
+                  () => {
+                    onTriggerDialogue(
+                      "CKY",
+                      "¡Tenés razón Ángela, estoy toda sucia! Vamos a la parada a tomarnos el 4 de vuelta a casa.",
+                      "You're right Angela, I'm all dirty! Let's head to the stop to catch Line 4 back home."
+                    );
+                  }
+                );
+              }
+            );
           }}
         />
       )}

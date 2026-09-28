@@ -5,10 +5,12 @@ import {
   getAllSaveSlots, 
   saveToSlot, 
   loadFromSlot, 
-  deleteSaveSlot 
+  deleteSaveSlot,
+  exportAllSavesJson,
+  importAllSavesJson
 } from "../lib/saveSystem";
 import { Language, GameState, OutfitType, CharacterStats, InventoryItem, PhoneChat, PhonePhoto, DiaryEntry, Companion, Position } from "../types";
-import { Save, Download, Trash2, Clock, MapPin, User, Check, AlertTriangle, ShieldCheck, X } from "lucide-react";
+import { Save, Download, Trash2, Clock, MapPin, User, Check, AlertTriangle, ShieldCheck, X, Copy, FileText } from "lucide-react";
 
 interface SaveLoadModalProps {
   language: Language;
@@ -33,9 +35,61 @@ export default function SaveLoadModal({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmOverwriteId, setConfirmOverwriteId] = useState<string | null>(null);
+  const [showBackupModal, setShowBackupModal] = useState<boolean>(false);
+  const [importJsonText, setImportJsonText] = useState<string>("");
 
   const reloadSlots = () => {
     setSlotsData(getAllSaveSlots());
+  };
+
+  const handleExportBackup = () => {
+    const jsonStr = exportAllSavesJson();
+    if (!jsonStr) {
+      showToast(language === "es" ? "Error al exportar partidas" : "Error exporting saves");
+      return;
+    }
+    navigator.clipboard.writeText(jsonStr);
+    // Also trigger file download for convenience
+    try {
+      const blob = new Blob([jsonStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `CKY_RPG_Partidas_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {}
+
+    playSoundEffect(800, "sine");
+    showToast(
+      language === "es"
+        ? "¡Copia de seguridad descargada y copiada al portapapeles!"
+        : "Backup downloaded and copied to clipboard!"
+    );
+  };
+
+  const handleImportBackup = () => {
+    if (!importJsonText.trim()) {
+      showToast(language === "es" ? "Pega el texto de la copia de seguridad" : "Paste the backup text first");
+      return;
+    }
+    const success = importAllSavesJson(importJsonText.trim());
+    if (success) {
+      playSoundEffect(880, "sine");
+      showToast(
+        language === "es"
+          ? "¡Partidas restauradas con éxito!"
+          : "Save games restored successfully!"
+      );
+      reloadSlots();
+      setImportJsonText("");
+      setShowBackupModal(false);
+    } else {
+      playSoundEffect(200, "sawtooth");
+      showToast(
+        language === "es" ? "El formato de la copia de seguridad no es válido" : "Invalid backup format"
+      );
+    }
   };
 
   useEffect(() => {
@@ -368,8 +422,36 @@ export default function SaveLoadModal({
           })}
         </div>
 
+        {/* Backup & Portability Actions */}
+        <div className="mt-3 p-2.5 rounded-2xl bg-slate-900/60 border border-slate-800 flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-mono">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span>{language === "es" ? "Copia de Seguridad:" : "Backup & Portability:"}</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportBackup}
+              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-yellow-400 text-[11px] font-mono font-bold flex items-center gap-1.5 border border-slate-700 transition active:scale-95"
+              title={language === "es" ? "Descargar y copiar partidas a archivo/portapapeles" : "Export all saves to file/clipboard"}
+            >
+              <Copy className="w-3 h-3" />
+              <span>{language === "es" ? "Exportar Partidas" : "Export Saves"}</span>
+            </button>
+
+            <button
+              onClick={() => setShowBackupModal(true)}
+              className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-blue-400 text-[11px] font-mono font-bold flex items-center gap-1.5 border border-slate-700 transition active:scale-95"
+              title={language === "es" ? "Pegar o restaurar partidas guardadas" : "Restore saves from backup"}
+            >
+              <Download className="w-3 h-3" />
+              <span>{language === "es" ? "Restaurar Copia" : "Restore Backup"}</span>
+            </button>
+          </div>
+        </div>
+
         {/* Modal Footer Info */}
-        <div className="mt-4 pt-3 border-t border-slate-800/80 text-center font-mono text-[10px] text-slate-500 flex items-center justify-between">
+        <div className="mt-3 pt-3 border-t border-slate-800/80 text-center font-mono text-[10px] text-slate-500 flex items-center justify-between">
           <span>{language === "es" ? "Almacenamiento Local (LocalStorage) Activo" : "LocalStorage Active"}</span>
           <button
             onClick={onClose}
@@ -378,6 +460,57 @@ export default function SaveLoadModal({
             {language === "es" ? "Volver al Juego" : "Back to Game"}
           </button>
         </div>
+
+        {/* Import Backup Submodal */}
+        {showBackupModal && (
+          <div className="absolute inset-0 z-50 bg-black/90 backdrop-blur-md rounded-3xl p-5 flex flex-col justify-between animate-fade-in border border-blue-500/40">
+            <div>
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+                <div className="flex items-center gap-2">
+                  <Download className="w-4 h-4 text-blue-400" />
+                  <h3 className="text-sm font-bold font-display uppercase tracking-wider text-blue-400">
+                    {language === "es" ? "Restaurar Copia de Seguridad" : "Restore Save Backup"}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowBackupModal(false)}
+                  className="p-1.5 rounded-lg bg-slate-900 text-slate-400 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <p className="text-[11px] text-slate-300 font-mono mb-2">
+                {language === "es"
+                  ? "Pega aquí el texto JSON de la copia de seguridad para restaurar todas tus partidas:"
+                  : "Paste the backup JSON text here to restore all your save slots:"}
+              </p>
+
+              <textarea
+                value={importJsonText}
+                onChange={(e) => setImportJsonText(e.target.value)}
+                placeholder='{ "slots": { ... } }'
+                className="w-full h-36 bg-slate-950 border border-slate-800 rounded-xl p-3 font-mono text-[11px] text-emerald-400 focus:outline-none focus:border-blue-500 resize-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+              <button
+                onClick={() => setShowBackupModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono"
+              >
+                {language === "es" ? "Cancelar" : "Cancel"}
+              </button>
+              <button
+                onClick={handleImportBackup}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs font-bold transition active:scale-95 flex items-center gap-1.5 shadow-lg"
+              >
+                <Check className="w-3.5 h-3.5" />
+                {language === "es" ? "Restaurar Ahora" : "Restore Now"}
+              </button>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
