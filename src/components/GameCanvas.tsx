@@ -1303,127 +1303,17 @@ export default function GameCanvas({
 
   const startAlanisDialogueChain = () => {
     setShowUnknownPhoneModal(false);
-    playSound(600, "sine", 0.3);
-
-    const enemyName = neighborName || "Vanesa";
-
-    const msg1Es = "Soy la Líder Suprema de todo lo conocido. Un espíritu que gobierna todas las realidades.";
-    const msg1En = "I am the Supreme Leader of all that is known. A spirit that rules all realities.";
-    triggerNewPhoneMessage("Alanis", msg1Es, msg1En);
-
+    playSound(800, "sine", 0.3);
+    if (setHasPhone) setHasPhone(true);
+    if (triggerAlanisPhoneChat) {
+      triggerAlanisPhoneChat();
+    }
     onTriggerDialogue(
-      "Alanis",
-      msg1Es,
-      msg1En,
+      "Celular de CKY",
+      "📱 ¡Bzzzz Bzzzz! Sientes una extraña presencia cósmica y tu celular vibra con un mensaje urgente de Alanis (Líder Suprema). Vamos a abrir el celular para responderle.",
+      "📱 Bzzzz Bzzzz! You feel a strange cosmic presence and your phone vibrates with an urgent message from Alanis (Supreme Leader). Let's open the phone to reply.",
       () => {
-        const msg2Es = "CKY: Te felicito. ¿Y yo qué culpa tengo?";
-        const msg2En = "CKY: Congratulations. And how is that my fault?";
-        triggerNewPhoneMessage("Alanis", msg2Es, msg2En);
-
-        onTriggerDialogue(
-          "CKY",
-          "Te felicito. ¿Y yo qué culpa tengo?",
-          "Congratulations. And how is that my fault?",
-          () => {
-            const msg3Es = "Tú eres la heredera de este poder, mi reinado está llegando a su fin...";
-            const msg3En = "You are the heir to this power, my reign is coming to an end...";
-            triggerNewPhoneMessage("Alanis", msg3Es, msg3En);
-
-            onTriggerDialogue(
-              "Alanis",
-              msg3Es,
-              msg3En,
-              () => {
-                const msg4Es = "CKY: ¿Y esa herencia de cuánta plata es?";
-                const msg4En = "CKY: And how much money is that inheritance?";
-                triggerNewPhoneMessage("Alanis", msg4Es, msg4En);
-
-                onTriggerDialogue(
-                  "CKY",
-                  "¿Y esa herencia de cuánta plata es?",
-                  "And how much money is that inheritance?",
-                  () => {
-                    const msg5Es = "¡Poder... Niña estúpida!";
-                    const msg5En = "Power... Stupid girl!";
-                    triggerNewPhoneMessage("Alanis", msg5Es, msg5En);
-
-                    onTriggerDialogue(
-                      "Alanis",
-                      msg5Es,
-                      msg5En,
-                      () => {
-                        const msg6Es = "Ahora tienes el poder de hablar con espíritus...";
-                        const msg6En = "Now you have the power to speak with spirits...";
-                        triggerNewPhoneMessage("Alanis", msg6Es, msg6En);
-
-                        onTriggerDialogue(
-                          "Alanis",
-                          msg6Es,
-                          msg6En,
-                          () => {
-                            const msg7Es = `Pero debes tener cuidado, ${enemyName} también tiene poderes y quiere mi lugar... va a intentar destruirte.`;
-                            const msg7En = `But you must be careful, ${enemyName} also has powers and wants my place... she will try to destroy you.`;
-                            triggerNewPhoneMessage("Alanis", msg7Es, msg7En);
-
-                            onTriggerDialogue(
-                              "Alanis",
-                              msg7Es,
-                              msg7En,
-                              () => {
-                                const msg8Es = "CKY: ¿Y qué tengo que hacer?";
-                                const msg8En = "CKY: And what do I have to do?";
-                                triggerNewPhoneMessage("Alanis", msg8Es, msg8En);
-
-                                onTriggerDialogue(
-                                  "CKY",
-                                  "¿Y qué tengo que hacer?",
-                                  "And what do I have to do?",
-                                  () => {
-                                    const msg9Es = "Por ahora intenta hablar con un espíritu. Luego veremos. Adiós.";
-                                    const msg9En = "For now try to speak with a spirit. We will see later. Goodbye.";
-                                    triggerNewPhoneMessage("Alanis", msg9Es, msg9En);
-
-                                    onTriggerDialogue(
-                                      "Alanis",
-                                      msg9Es,
-                                      msg9En,
-                                      () => {
-                                        setHasTalkedToAlanis(true);
-                                        unlockDiaryEntry("chapter_01_alanis");
-                                        addXP(20);
-                                        playSound(520, "sine", 0.4);
-
-                                        if (currentMap === "bedroom") {
-                                          setPlayerPos({ x: 7, y: 4 });
-                                          setFacing("up");
-                                        }
-
-                                        onTriggerDialogue(
-                                          "CKY",
-                                          "¡Esa llamada de Alanis estuvo rarísima (+20 XP)! Me reveló que tengo un linaje divino para hablar con espíritus y que la vecina tiene poderes oscuros y buscará destruirme. Quedó anotado en mi diario. Alanis me ordenó intentar hablar con un espíritu...",
-                                          "That call from Alanis was weird (+20 XP)! She revealed my divine lineage to speak with spirits and that the neighbor has dark powers and will try to destroy me. Recorded in my diary. Alanis ordered me to try speaking with a spirit...",
-                                          () => {
-                                            setTimeout(() => {
-                                              startAngelaDialogueChain();
-                                            }, 700);
-                                          }
-                                        );
-                                      }
-                                    );
-                                  }
-                                );
-                              }
-                            );
-                          }
-                        );
-                      }
-                    );
-                  }
-                );
-              }
-            );
-          }
-        );
+        onOpenPhone();
       }
     );
   };
@@ -14323,8 +14213,8 @@ export default function GameCanvas({
                   } else {
                     onTriggerDialogue(
                       "CKY",
-                      "Me acuesto a dormir profundamente hasta el día siguiente... Zzz 🌙",
-                      "I fall deeply asleep until the next day... Zzz 🌙",
+                      "Me acuesto en mi camita a descansar profundamente... Mañana viernes tendré que ir al cementerio municipal a buscar la tumba rosa de Ángela y llevarle el sándwich. Zzz 🌙",
+                      "I lie down in my bed to rest deeply... Tomorrow Friday I will have to go to the cemetery to find Angela's pink grave and bring her the sandwich. Zzz 🌙",
                       () => {
                         playSound(900, "sine", 0.5);
                         setTimeout(() => {
@@ -14343,7 +14233,7 @@ export default function GameCanvas({
                       {currentDay === 2 ? "Dormir por la noche (Terminar Día 2)" : "Dormir por la noche (Terminar Día 1)"}
                     </p>
                     <p className="text-[10px] text-purple-400/80">
-                      {currentDay === 2 ? "Descansar para despertar el Viernes (Día 3)" : "Termina el día y desencadena el mensaje de Ángela"}
+                      {currentDay === 2 ? "Descansar para despertar el Viernes (Día 3)" : (!hasTalkedToAlanis || !hasTalkedToAngela ? "Descansar y revisar los mensajes del celular" : "Dormir profundamente y comenzar el Día 2")}
                     </p>
                   </div>
                 </div>

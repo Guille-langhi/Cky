@@ -1383,7 +1383,7 @@ export default function App() {
             canvasStateRef.current.setHasTalkedToAngela(true);
           }
         }
-        addXP(10);
+        addXP(15);
         unlockDiaryEntry("chapter_01_angela_tomb");
 
         // Close phone interface modal and return gameState to playing
@@ -1391,14 +1391,9 @@ export default function App() {
 
         setTimeout(() => {
           handleTriggerDialogue(
-            "Día 1 Finalizado",
-            "Terminaste la conversación con Ángela. CKY se queda profundamente dormida pensando en la tumba rosa... 🌙",
-            "You finished the conversation with Angela. CKY falls deeply asleep thinking about the pink tomb... 🌙",
-            () => {
-              if (canvasStateRef.current?.startDay2Intro) {
-                canvasStateRef.current.startDay2Intro();
-              }
-            }
+            "Contacto con Ángela Completado",
+            "Terminaste de hablar con el espíritu de Ángela por el celular (+15 XP). Quedaron registradas las pistas en tu diario íntimo. Mañana tendrás que llevarle el sándwich de salame y queso a su tumba rosa... Ahora debes ir a tu habitación y acostarte en tu cama a dormir para terminar el Día 1.",
+            "You finished talking to Angela's spirit on your phone (+15 XP). Clues are recorded in your private diary. Tomorrow you must bring the salami and cheese sandwich to her pink grave... Now go to your bedroom and lie down in your bed to sleep and finish Day 1."
           );
         }, 300);
       }
